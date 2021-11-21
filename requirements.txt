@@ -2,3 +2,8 @@ asgiref==3.2.10
 Django==3.0.5
 pytz==2020.1
 sqlparse==0.3.1
+
+# HEX color field https://pypi.org/project/django-colorfield/
+django-colorfield
+flake8-isort=4.1.1 # https://pypi.org/project/flake8-isort/
+Pillow=8.4.0 # for images in the "Recipe" model
