@@ -1,5 +1,5 @@
-from django.core import validators
 import re
+from django.core import validators
 
 
 class slug_regex_validator(validators.RegexValidator):
@@ -9,4 +9,3 @@ class slug_regex_validator(validators.RegexValidator):
         'numbers, and ^[-a-zA-Z0-9_]+$ characters.'
     )
     flags = re.ASCII
-
