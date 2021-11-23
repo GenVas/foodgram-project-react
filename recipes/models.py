@@ -1,65 +1,25 @@
-from enum import unique
+# from enum import unique
 from colorfield.fields import ColorField
 from django.core import validators
 from django.db import models
-from django.utils.translation import ugettext_lazy as _  # TODO: переделать в перевод
-from django.db.models.signals import post_save
-from django.dispatch import receiver
-from django.utils.datetime_safe import datetime
+from django.utils.translation import \
+    ugettext_lazy as _  # TODO: переделать в перевод
 
+# from users.models import User
+
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 from .validators import slug_regex_validator
-from users.models import User
+
+# from django.db.models.signals import post_save
+# from django.dispatch import receiver
+# from django.utils.datetime_safe import datetime
+
 
 CART_STRING_METHOD = _("User: {} has {} items in their cart")
-
-
-class Measurment_unit(models.Model):
-    measurement_unit = models.CharField(
-        max_length=200,
-        verbose_name="единица измерения",
-        related_name="units",
-        blank=False,
-        unique=True
-    )
-
-    class Meta:
-        ordering = ['measurement_unit']
-        verbose_name = "единица измерения"
-        verbose_name_plural = "единицы измерения"
-
-    def __str__(self):
-        return self.measurement_unit
-
-
-class Ingredient(models.Model):
-    name = models.CharField(
-        max_length=200,
-        verbose_name="название",
-        related_name="ingredients",
-        blank=False, unique=True,
-    )
-    measurement_unit = models.ForeignKey(
-        Measurment_unit,
-        verbose_name="единица измерения",
-        related_name="ingredients",
-        blank=False
-    )
-    quantity = models.DecimalField(
-        verbose_name="количество",
-        related_name="ingredients",
-        blank=False,
-        validators=validators.MinValueValidator(limit_value=0)
-    )
-
-    class Meta:
-        ordering = ['name']
-        verbose_name = "Ингредиент"
-        verbose_name_plural = "Ингредиенты"
-        unique_together = ["name", "measurement_unit"]
-
-    def __str__(self):
-        return self.name
+CART_ENTRY_STRING_METHOD = _("This entry contains {} {}(s).")
 
 
 class Tag(models.Model):
@@ -87,25 +47,49 @@ class Tag(models.Model):
         return self.name
 
 
+class Ingredient(models.Model):
+    name = models.CharField(
+        max_length=200,
+        verbose_name="название",
+        blank=False
+    )
+    measurement_unit = models.CharField(
+        max_length=200,
+        verbose_name="единица измерения",
+        blank=False
+    )
+
+    class Meta:
+        ordering = ['name']
+        verbose_name = "Ингредиент"
+        verbose_name_plural = "Ингредиенты"
+
+    def __str__(self):
+        return self.name
+
+
 class Recipe(models.Model):
     # https://docs.djangoproject.com/en/3.2/ref/models/fields/#recursive-relationships
     author = models.ForeignKey(
         User,
         on_delete=models.DO_NOTHING,
         verbose_name='автор рецепта',
-        related_name="recipes",
-        blank=False)
+        # related_name="recipes",
+        blank=False
+    )
     ingredients = models.ManyToManyField(
         Ingredient,
+        through="IngredientRecipe",
         verbose_name='ингрединеты',
-        related_name="recipes",
-        on_delete=models.PROTECT, blank=False)
-    tags = models.ForeignKey(
+        # related_name="recipes",
+    )
+    tags = models.ManyToManyField(
         Tag,
         verbose_name='тэги',
-        related_name="recipes",
-        on_delete=models.SET_NULL,
-        blank=True)
+        # related_name="recipes",
+        # on_delete=models.DO_NOTHING,
+        blank=True
+    )
     # https://gist.github.com/yprez/7704036
     image = models.ImageField(
         blank=False,
@@ -115,70 +99,83 @@ class Recipe(models.Model):
         max_length=200,
         verbose_name="название рецепта",
         blank=False,
-        db_index=True)
+        db_index=True
+    )
     text = models.TextField(
         verbose_name="описание рецепта",
-        label="опишите подробно этапы, особенности приготовления",
-        blank=False)
+        blank=False
+    )
     cooking_time = models.PositiveSmallIntegerField(
         verbose_name="время приготовления",
-        label="Время приготовления в минутах",
         blank=False,
-        validator=validators.MinValueValidator(limit_value=1)
+        validators=[validators.MinValueValidator(limit_value=1)]
     )
-
     pub_date = models.DateTimeField(
         auto_now_add=True,
         verbose_name="Дата публикации"
     )
 
     class Meta:
-        ordering = [-'pub_date']
+        ordering = ['-pub_date']
         verbose_name = "Рецепт"
         verbose_name_plural = "Рецепты"
-        unique_together = ["author", "name", "ingredients", "text"]
 
     def __str__(self):
         return self.name
 
 
+class IngredientRecipe(models.Model):
+    recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
+    ingredient = models.ForeignKey(Ingredient, on_delete=models.CASCADE)
+    quantity = models.DecimalField(
+        max_digits=6,
+        decimal_places=2,
+        verbose_name="количество",
+        blank=False,
+        validators=[validators.MinValueValidator(limit_value=0)]
+    )
+
+
 class Cart(models.Model):
     user = models.ForeignKey(
-        User, on_delete=models.CASCADE,
+        User,
+        on_delete=models.CASCADE,
         related_name="buyer",
     )
     count = models.PositiveIntegerField(default=0)
-    recipe = models.ForeignKey(
-        Recipe, on_delete=models.CASCADE,
+
+    recipe = models.ManyToManyField(
+        Recipe,
+        # on_delete=models.CASCADE,
         related_name="good",
     )
-    creation_date = models.DateTimeField(verbose_name=_('creation date'))
+    creation_date = models.DateTimeField(
+        verbose_name=_('creation date'),
+        auto_now=True)
     updated = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(fields=['user', 'author'],
-                                    name='unique_follow'),
-        ]
-
-        verbose_name = ('корзина')
-        verbose_name_plural = ('корзины')
-        ordering = ('-creation_date',)
+    active = models.BooleanField(
+        verbose_name="флаг активности корзины",
+        default=True
+    )
     is_ordered = models.BooleanField(default=False)
 
-    def __str__(self):
-        CART_STRING_METHOD.format(self.user, self.count)
+    class Meta:
+        verbose_name = ('Корзина')
+        verbose_name_plural = ('Корзины')
+        ordering = ('-creation_date',)
 
 
-class Cart_entry(models.Model):
-    recipe = models.ForeignKey(Recipe, null=True, on_delete='CASCADE')
-    cart = models.ForeignKey(Cart, null=True, on_delete='CASCADE')
-    quantity = models.PositiveIntegerField()
 
-    def __str__(self):
-        return "This entry contains {} {}(s).".format(self.quantity, self.recipe.name)
+# class Cart_entry(models.Model):
+#     recipe = models.ForeignKey(Recipe, null=True, on_delete=models.CASCADE)
+#     cart = models.ForeignKey(Cart, null=True, on_delete=models.CASCADE)
+#     quantity = models.PositiveIntegerField()
 
-class Favorites(models.Model):
+#     def __str__(self):
+#         return CART_ENTRY_STRING_METHOD.format(self.quantity, self.recipe.name)
+
+
+class Following(models.Model):
     user = models.ForeignKey(
         User, on_delete=models.CASCADE,
         related_name="follower",
@@ -193,9 +190,33 @@ class Favorites(models.Model):
             models.UniqueConstraint(fields=['user', 'author'],
                                     name='unique_follow'),
         ]
+        ordering = ['author']
+        verbose_name = "Подписка"
+        verbose_name_plural = "Подписки"
+
+    def __str__(self):
+        return self.author
 
 
-https://stackoverflow.com/questions/48716346/django-cart-and-item-model-getting-quantity-to-update 
+class Favorites(models.Model):
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE,
+        related_name="collector",
+    )
+
+    recipe = models.ForeignKey(
+        Recipe, on_delete=models.DO_NOTHING,
+        related_name="watching",
+    )
+
+    class Meta:
+        ordering = ['recipe']
+        verbose_name = "Избранное"
+        verbose_name_plural = "Избранное"
+
+    def __str__(self):
+        return self.recipe
+# https://stackoverflow.com/questions/48716346/django-cart-and-item-model-getting-quantity-to-update
 # @receiver(post_save, sender=Cart_entry)
 # def update_cart(sender, instance, **kwargs):
 #     line_cost = instance.quantity * instance.product.cost
@@ -203,5 +224,8 @@ https://stackoverflow.com/questions/48716346/django-cart-and-item-model-getting-
 #     instance.cart.updated = datetime.now()
 
 
+# TODO: Создать менеджера (models.Manager)
+# для обработка корзины в список из ингредиентов
 
-# TODO: Создать менеджера (models.Manager) для обработка корзины в список из ингредиентов 
+# pip install django-SHOP
+# from shop.models.cart import CartManager, CartItemManager
