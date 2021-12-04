@@ -1,4 +1,5 @@
 from django.core.exceptions import ValidationError
+from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 from drf_extra_fields.fields import Base64ImageField
 from django.db.models import F
@@ -236,13 +237,14 @@ class RecipeShortSerializer(serializers.ModelSerializer):
 
 
 class AddIngredientToRecipeSerializer(serializers.ModelSerializer):
-    """Service seriailizer for CreateRecipeSerializer field"""
+    """Service seriailizer for CreateRecipeSerializer field,
+    allows to add one or more ingredients to a recipe"""
     id = serializers.IntegerField()
-    amount = serializers.IntegerField()
+    quantity = serializers.IntegerField()
 
     class Meta:
         model = Ingredient
-        fields = ('id', 'amount')
+        fields = ('id', 'quantity')
 
 
 class CreateRecipeSerializer(serializers.ModelSerializer):
@@ -256,15 +258,17 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Recipe
-        fields = '__all__'
-        read_only_fields = ('author',)
+        fields = [
+            'ingredients', 'tags', 'image', 'name', 'text', 'cooking_time'
+        ]
+        # read_only_fields = ('author',)
 
     def create(self, validated_data):
         ingredients = validated_data.pop('ingredients')
         tags = validated_data.pop('tags')
 
         for ingredient in ingredients:
-            if ingredient['amount'] < 0:
+            if ingredient['quantity'] < 0:
                 raise serializers.ValidationError(
                     'Количество ингредиента не может быть '
                     'отрицательным числом.'
@@ -273,16 +277,16 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
         recipe.tags.set(tags)
         for ingredient in ingredients:
             obj = get_object_or_404(Ingredient, id=ingredient['id'])
-            amount = ingredient['amount']
+            quantity = ingredient['quantity']
             if IngredientRecipe.objects.filter(
                     recipe=recipe,
                     ingredient=obj
             ).exists():
-                amount += F('amount')
+                quantity += F('quantity')
             IngredientRecipe.objects.update_or_create(
                 recipe=recipe,
                 ingredient=obj,
-                defaults={'amount': amount}
+                defaults={'quantity': quantity}
             )
         return recipe
 
@@ -291,7 +295,7 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
             ingredients = validated_data.pop('ingredients')
 
             for ingredient in ingredients:
-                if ingredient['amount'] < 0:
+                if ingredient['quantity'] < 0:
                     raise serializers.ValidationError(
                         'Количество ингредиента не может быть '
                         'отрицательным числом.'
@@ -300,16 +304,16 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
             for ingredient in ingredients:
                 obj = get_object_or_404(Ingredient,
                                         id=ingredient['id'])
-                amount = ingredient['amount']
+                quantity = ingredient['quantity']
                 if IngredientRecipe.objects.filter(
                         recipe=instance,
                         ingredient=obj
                 ).exists():
-                    amount += F('amount')
+                    quantity += F('quantity')
                 IngredientRecipe.objects.update_or_create(
                     recipe=instance,
                     ingredient=obj,
-                    defaults={'amount': amount}
+                    defaults={'quantity': quantity}
                 )
         if 'tags' in self.initial_data:
             tags = validated_data.pop('tags')
