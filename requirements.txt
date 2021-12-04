@@ -1,9 +1,43 @@
 asgiref==3.2.10
 Django==3.0.5
 pytz==2020.1
-sqlparse==0.3.1
 
-# HEX color field https://pypi.org/project/django-colorfield/
-django-colorfield
-flake8-isort=4.1.1 # https://pypi.org/project/flake8-isort/
+python-dotenv # https://pypi.org/project/python-dotenv/
+django-colorfield # HEX color field https://pypi.org/project/django-colorfield/
+sqlparse==0.3.1
+psycopg2-binary  # https://pypi.org/project/psycopg2/
+
+
+
+coverage # https://pypi.org/project/coverage/ https://coverage.readthedocs.io/en/6.1.2/#quick-start
+pytest # https://pypi.org/project/pytest/
+
+
+drf_yasg
+PyJWT==1.7.1
+djangorestframework-simplejwt==4.3.0
+djoser # https://djoser.readthedocs.io/en/latest/getting_started.html
+social-auth-app-django  # for auth through social nets
+
+django_filter
+django-extra-fields
 Pillow=8.4.0 # for images in the "Recipe" model
+
+# PEP checks
+flake8
+pep8-naming
+flake8-broken-line
+flake8-return
+flake8-isort # https://pypi.org/project/flake8-isort/
+
+
+npm # https://nodejs.org/en/about/
+    # npm init -y
+    # npm i webpack webpack-cli --save-dev
+    # npm i @babel/core babel-loader @babel/preset-env @babel/preset-react --save-dev
+    # npm i react react-dom --save-dev
+    # npm i @material-ui/core
+    # npm install @babel/plugin-proposal-class-properties
+    # npm install react-router-dom
+    # npm install @material-ui/icons
+    # after configuring all app files execute: "np run dev"

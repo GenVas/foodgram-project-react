@@ -9,11 +9,15 @@
 #         settings.AUTH_USER_MODEL,
 #         on_delete=models.CASCADE,
 #     )
-
+from django.utils.translation import gettext as _
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
-# from django.contrib.auth.validators import UnicodeUsernameValidator
+
+HELP_TEXT_FOR_USER_ACTIVE_FIELD = _(
+    'Designates whether this user should be treated as active. '
+    'Unselect this instead of deleting accounts.'
+)
 
 
 class UserRole:
@@ -23,50 +27,52 @@ class UserRole:
 
 
 ROLE_CHOICES = (
-    (UserRole.USER, "пользователь"),
+    (UserRole.USER, _("User")),
     # (UserRole.MODERATOR, "модератор"),
-    (UserRole.ADMIN, "администратор"),
+    (UserRole.ADMIN, _("Administrator")),
 )
 
 
 class User(AbstractUser):
 
-    first_name = models.CharField(
-        verbose_name="имя",
+    username = models.CharField(
+        verbose_name=_("Name"),
         max_length=150,
-        blank=True,
+        blank=False,
+        unique=True,
+    )
+    first_name = models.CharField(
+        verbose_name=_("Name"),
+        max_length=150,
+        blank=False,
     )
     last_name = models.CharField(
-        verbose_name="фамилия",
+        verbose_name=_("Surname"),
         max_length=150,
-        blank=True,
+        blank=False,
     )
     email = models.EmailField(
-        verbose_name="адрес электронной почты",
-        blank=True, unique=True,
+        verbose_name=_("Email address"),
+        blank=False, unique=True,
         max_length=254,
     )
-
     role = models.CharField(
-        verbose_name="роль",
+        verbose_name=_("Role"),
         max_length=60,
         choices=ROLE_CHOICES,
         null=False,
         default=UserRole.USER,
     )
-
     is_active = models.BooleanField(
-        ('active'),
+        verbose_name=_('active'),
         default=True,
-        help_text=(
-            'Designates whether this user should be treated as active. '
-            'Unselect this instead of deleting accounts.'
-        ),
+        help_text=(HELP_TEXT_FOR_USER_ACTIVE_FIELD),
     )
 
     class Meta:
-        verbose_name = "пользователь"
-        verbose_name_plural = "пользователи"
+        ordering = ('username', )
+        verbose_name = _("User")
+        verbose_name_plural = _("Users")
 
     def __str__(self):
         return self.username
