@@ -1,4 +1,4 @@
-"""foodgram_project URL Configuration
+'''foodgram_project URL Configuration
 
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/3.0/topics/http/urls/
@@ -12,7 +12,7 @@ Class-based views
 Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
-"""
+'''
 from django.conf.urls import url
 from rest_framework_simplejwt.views import TokenRefreshView
 from django.urls import include, path
@@ -21,26 +21,46 @@ from backend.api import views
 
 
 router = routers.DefaultRouter()
-router.register(r"tags", views.TagViewSet, basename="tags")
-router.register(r"recipes", views.RecipeViewSet, basename="recipe")
-router.register(r"ingredients", views.IngredientViewSet, basename="ingredients")
-# router.register(r"user/subscriptions", views.FollowingListViewSet, basename="subscriptions")
-# router.register(r"", views., basename="")
-
-# authpatterns = [
-#     url(r"^token/login/$", djoser_views.TokenCreateView.as_view(), name="login"),
-#     url(r"^token/logout/$", djoser_views.TokenDestroyView.as_view(), name="logout"),
-#     url(r"^users/$"", djoser_views.UserViewSet, name="change_password")
-# ]
+router.register(
+    r'tags',
+    views.TagViewSet,
+    basename='tags')
+router.register(
+    r'recipes',
+    views.RecipeViewSet,
+    basename='recipe')
+router.register(
+    r'ingredients',
+    views.IngredientViewSet,
+    basename='ingredients')
 
 urlpatterns = [
-    # path("auth/", include(authpatterns)),
-    path(r"users/subscriptions/", views.list_my_followings, name="subscriptions"),
-    path('users/<int:user_id>/subscribe/',
-         views.ManageFollowingsViewSet.as_view(), name='subscribe'),
-    path(r'recipes/<int:recipe_id>/favorite/',
-         views.ManageFavoritesViewSet.as_view(), name='favorites'),
-    path("", include('djoser.urls')),
-    path("", include(router.urls)),
-    # path('test/', views.MyView.as_view()),  # test url
+    # path('auth/', include(authpatterns)),
+    path(
+        r'users/subscriptions/',
+        views.list_my_followings,
+        name='subscriptions'
+    ),
+    path(
+        r'users/<int:user_id>/subscribe/',
+        views.ManageFollowingsViewSet.as_view(),
+        name='subscribe'
+    ),
+    path(
+        r'recipes/<int:recipe_id>/favorite/',
+        views.ManageFavoritesViewSet.as_view(),
+        name='favorites'
+    ),
+    path(
+        r'recipes/<int:recipe_id>/shopping_cart/',
+        views.ManageCartView.as_view(),
+        name='carts'
+    ),
+    path(
+        r'recipes/download_shopping_cart/',
+        views.DownloadCartView.as_view(),
+        name='carts'
+    ),
+    path('', include('djoser.urls')),
+    path('', include(router.urls)),
 ]

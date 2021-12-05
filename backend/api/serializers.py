@@ -8,6 +8,7 @@ from backend.recipes.models import (
     Cart, Favorites, Following,
     Ingredient, IngredientRecipe, Recipe,
     Tag, )
+from rest_framework.validators import UniqueTogetherValidator
 from djoser.serializers import UserCreateSerializer
 from djoser.constants import Messages
 from django.utils.translation import gettext_lazy as _
@@ -17,23 +18,28 @@ POSITIVE_VALUE_REQUIRED = _('Value of ingredient must be positive')
 UNABLE_TO_SIGN_FOR_YOURSELF = _('Unable to sign up for yourself')
 ALREADY_SUBSCRIBED = _('You are already following this author')
 RECIPE_IS_ALREADY_IN_FAVORITES = _('Recipe is already in favorites')
+RECIPE_UNIQUE_CONSTRAINT_MESSAGE = _(
+    'Author can not have multiple recipes '
+    'with the same name and text desciption.'
+    )
+RECIPE_IS_ALREADY_IN_THE_SHOPPING_CART = _('Recipe is already in your shopping cart')
 
 
 class CustomMessages(Messages):
-    INVALID_CREDENTIALS_ERROR = _("Unable to log in with provided credentials.")
-    INACTIVE_ACCOUNT_ERROR = _("User account is disabled.")
-    INVALID_TOKEN_ERROR = _("Invalid token for given user.")
+    INVALID_CREDENTIALS_ERROR = _('Unable to log in with provided credentials.')
+    INACTIVE_ACCOUNT_ERROR = _('User account is disabled.')
+    INVALID_TOKEN_ERROR = _('Invalid token for given user.')
     INVALID_UID_ERROR = _("Invalid user id or user doesn't exist.")
-    STALE_TOKEN_ERROR = _("Stale token for given user.")
+    STALE_TOKEN_ERROR = _('Stale token for given user.')
     PASSWORD_MISMATCH_ERROR = _("The two password fields didn't match.")
     USERNAME_MISMATCH_ERROR = _("The two {0} fields didn't match.")
-    INVALID_PASSWORD_ERROR = _("Invalid password.")
-    EMAIL_NOT_FOUND = _("User with given email does not exist.")
-    CANNOT_CREATE_USER_ERROR = _("Unable to create account.")
+    INVALID_PASSWORD_ERROR = _('Invalid password.')
+    EMAIL_NOT_FOUND = _('User with given email does not exist.')
+    CANNOT_CREATE_USER_ERROR = _('Unable to create account.')
 
 
 class CustomUserCreateSerializer(UserCreateSerializer):
-    "Custom Serializer for adding new user"
+    'Custom Serializer for adding new user'
 
     class Meta:
         model = User
@@ -63,7 +69,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class CustomUserSerializer(UserSerializer):
-    "Custom Serializer for returning list of users"
+    'Custom Serializer for returning list of users'
 
     class Meta:
         model = User
@@ -73,19 +79,19 @@ class CustomUserSerializer(UserSerializer):
 
 
 class PasswordSerializer(serializers.Serializer):
-    """
+    '''
     Serializer for password change endpoint.
-    """
+    '''
     old_password = serializers.CharField(required=True)
     new_password = serializers.CharField(required=True)
 
 
 class TagSerializer(serializers.ModelSerializer):
-    """Serializer for genres."""
+    '''Serializer for genres.'''
 
     class Meta:
         model = Tag
-        fields = ("id", "name", "color", "slug")
+        fields = ('id', 'name', 'color', 'slug')
 
 
 class IngredientSerializer(serializers.ModelSerializer):
@@ -102,8 +108,8 @@ class IngredientSerializer(serializers.ModelSerializer):
 
 
 class SimpleRecipeSerializer(serializers.ModelSerializer):
-    """ Service serializer for nested
-        serialization - see SubscribersSerializer"""
+    ''' Service serializer for nested
+        serialization - see SubscribersSerializer'''
 
     class Meta:
         model = Recipe
@@ -111,14 +117,13 @@ class SimpleRecipeSerializer(serializers.ModelSerializer):
 
 
 
-
-
 ## Working with follow models: following and unfollowing users, dispalying
 ## list of subscriptions for authorized user
 
+
 class SubscribersSerializer(serializers.ModelSerializer):
-    """"This serializer is serving FollowingBaseSerializer below
-    for dispalying fields in line with requested documentation"""
+    ''''This serializer is serving FollowingBaseSerializer below
+    for dispalying fields in line with requested documentation'''
     recipes = SimpleRecipeSerializer(many=True, read_only=True)
     recipes_count = serializers.SerializerMethodField()
     is_subscribed = serializers.SerializerMethodField()
@@ -141,22 +146,23 @@ class SubscribersSerializer(serializers.ModelSerializer):
 
 
 class SimpleFollowSerializer(serializers.ModelSerializer):
-    """Serrializer that allows to unfollow user with DELETE
-    request from ManageFollowingsViewSet"""
+    '''Serrializer that allows to unfollow user with DELETE
+    request from ManageFollowingsViewSet'''
     class Meta:
         model = Following
-        fields = ["user", "author"]
+        fields = ['user', 'author']
 
 
 class FollowingBaseSerializer(serializers.ModelSerializer):
-    """Serrializer that allows to follow user with GET request
-    from ManageFollowingsViewSet"""
+    '''Serrializer that allows to follow user with GET request
+    from ManageFollowingsViewSet'''
 
     class Meta:
         model = Following
         fields = '__all__'
 
     def validate(self, attrs):
+        '''Repeats unqique contraint of the Following model'''
         request = self.context['request']
         if request.method == 'GET':
             if request.user == attrs['author']:
@@ -189,7 +195,7 @@ class IngredientRecipeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = IngredientRecipe
-        fields = ['id', 'name', 'measurement_unit', 'quantity']
+        fields = ['id', 'name', 'measurement_unit', 'amount']
 
 
 class RecipeListSerializer(serializers.ModelSerializer):
@@ -229,26 +235,26 @@ class RecipeListSerializer(serializers.ModelSerializer):
     #     ).exists()
 
 
-class RecipeShortSerializer(serializers.ModelSerializer):
-    """Service cerializer for FavoriteSerializer to_representation method"""
+class ShortRecipeSerializer(serializers.ModelSerializer):
+    '''Service cerializer for FavoriteSerializer to_representation method'''
     class Meta:
         model = Recipe
         fields = ['id', 'name', 'image', 'cooking_time']
 
 
 class AddIngredientToRecipeSerializer(serializers.ModelSerializer):
-    """Service seriailizer for CreateRecipeSerializer field,
-    allows to add one or more ingredients to a recipe"""
+    '''Service seriailizer for CreateRecipeSerializer field,
+    allows to add one or more ingredients to a recipe'''
     id = serializers.IntegerField()
-    quantity = serializers.IntegerField()
+    amount = serializers.IntegerField()
 
     class Meta:
         model = Ingredient
-        fields = ('id', 'quantity')
+        fields = ('id', 'amount')
 
 
-class CreateRecipeSerializer(serializers.ModelSerializer):
-    """Serializer for creating, updating, and deleting recipes"""
+class CreateRecipeSerializer(serializers.ModelSerializer):  #TODO: validation for repeated recipes
+    '''Serializer for creating, updating, and deleting recipes'''
     image = Base64ImageField(max_length=None, use_url=True)
     tags = serializers.PrimaryKeyRelatedField(
         many=True,
@@ -261,14 +267,27 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
         fields = [
             'ingredients', 'tags', 'image', 'name', 'text', 'cooking_time'
         ]
-        # read_only_fields = ('author',)
+        read_only_fields = ['author']
+
+    def validate(self, data):
+        '''Repeats unqique contraint and assure that new recipe
+        doesnt duplicate a record'''
+        request = self.context['request']
+        object = Recipe.objects.filter(
+            author=request.user,
+            name=data['name'], text=data['text'])
+        if (request.method == 'POST' and object.exists()):
+            raise serializers.ValidationError(
+                RECIPE_UNIQUE_CONSTRAINT_MESSAGE
+            )
+        return data
 
     def create(self, validated_data):
         ingredients = validated_data.pop('ingredients')
         tags = validated_data.pop('tags')
 
         for ingredient in ingredients:
-            if ingredient['quantity'] < 0:
+            if ingredient['amount'] < 0:
                 raise serializers.ValidationError(
                     'Количество ингредиента не может быть '
                     'отрицательным числом.'
@@ -277,16 +296,16 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
         recipe.tags.set(tags)
         for ingredient in ingredients:
             obj = get_object_or_404(Ingredient, id=ingredient['id'])
-            quantity = ingredient['quantity']
+            amount = ingredient['amount']
             if IngredientRecipe.objects.filter(
                     recipe=recipe,
                     ingredient=obj
             ).exists():
-                quantity += F('quantity')
+                amount += F('amount')
             IngredientRecipe.objects.update_or_create(
                 recipe=recipe,
                 ingredient=obj,
-                defaults={'quantity': quantity}
+                defaults={'amount': amount}
             )
         return recipe
 
@@ -295,7 +314,7 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
             ingredients = validated_data.pop('ingredients')
 
             for ingredient in ingredients:
-                if ingredient['quantity'] < 0:
+                if ingredient['amount'] < 0:
                     raise serializers.ValidationError(
                         'Количество ингредиента не может быть '
                         'отрицательным числом.'
@@ -304,16 +323,16 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
             for ingredient in ingredients:
                 obj = get_object_or_404(Ingredient,
                                         id=ingredient['id'])
-                quantity = ingredient['quantity']
+                amount = ingredient['amount']
                 if IngredientRecipe.objects.filter(
                         recipe=instance,
                         ingredient=obj
                 ).exists():
-                    quantity += F('quantity')
+                    amount += F('amount')
                 IngredientRecipe.objects.update_or_create(
                     recipe=instance,
                     ingredient=obj,
-                    defaults={'quantity': quantity}
+                    defaults={'amount': amount}
                 )
         if 'tags' in self.initial_data:
             tags = validated_data.pop('tags')
@@ -337,25 +356,50 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
 
 
 class ManageFavoriteSerializer(serializers.ModelSerializer):
-    """Serializer for including or excluding recipes
-    to/from favorites for authorized user"""
+    '''Serializer for including or excluding recipes
+    to/from favorites for authorized user'''
     class Meta:
         model = Favorites
         fields = '__all__'
 
-    def validate(self, attrs):
+    def validate(self, data):
         request = self.context['request']
         if (request.method == 'GET'
             and Favorites.objects.filter(
                 user=request.user,
-                recipe=attrs['recipe']).exists()):
+                recipe__id=data['recipe'].id).exists()):
             raise serializers.ValidationError(
                 RECIPE_IS_ALREADY_IN_FAVORITES
             )
-        return attrs
+        return data
 
     def to_representation(self, instance):
-        return RecipeShortSerializer(
+        return ShortRecipeSerializer(
+            instance.recipe,
+            context={'request': self.context.get('request')}
+        ).data
+
+
+class ManageCartSerializer(serializers.ModelSerializer):
+    '''Serializer adds recipe to the shopping cart with GET request
+    and deletes with DELETE request through ManageCartView'''
+    class Meta:
+        model = Cart
+        fields = '__all__'
+
+    def validate(self, data):
+        request = self.context['request']
+        if (request.method == 'GET'
+            and Cart.objects.filter(
+                user=request.user,
+                recipe__id=data['recipe'].id).exists()):
+            raise serializers.ValidationError(
+                RECIPE_IS_ALREADY_IN_THE_SHOPPING_CART
+            )
+        return data
+
+    def to_representation(self, instance):
+        return ShortRecipeSerializer(
             instance.recipe,
             context={'request': self.context.get('request')}
         ).data
