@@ -1,7 +1,8 @@
 import django_filters as filters
+from recipes.models import Cart
 
-from backend.recipes.models import Ingredient, Recipe
-from backend.users.models import User
+from recipes.models import Ingredient, Recipe
+from users.models import User
 
 
 class RecipeFilter(filters.FilterSet):

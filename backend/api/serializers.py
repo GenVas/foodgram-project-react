@@ -3,8 +3,8 @@ from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 from drf_extra_fields.fields import Base64ImageField
 from django.db.models import F
-from backend.users.models import User
-from backend.recipes.models import (
+from users.models import User
+from recipes.models import (
     Cart, Favorites, Following,
     Ingredient, IngredientRecipe, Recipe,
     Tag, )
@@ -13,6 +13,8 @@ from djoser.serializers import UserCreateSerializer
 from djoser.constants import Messages
 from django.utils.translation import gettext_lazy as _
 # from rest_framework.views import exception_handler
+from djoser.serializers import TokenCreateSerializer
+
 
 POSITIVE_VALUE_REQUIRED = _('Value of ingredient must be positive')
 UNABLE_TO_SIGN_FOR_YOURSELF = _('Unable to sign up for yourself')
@@ -38,6 +40,10 @@ class CustomMessages(Messages):
     CANNOT_CREATE_USER_ERROR = _('Unable to create account.')
 
 
+class CustomTokenCreateSerializer(TokenCreateSerializer):
+    pass
+
+
 class CustomUserCreateSerializer(UserCreateSerializer):
     'Custom Serializer for adding new user'
 
@@ -47,7 +53,7 @@ class CustomUserCreateSerializer(UserCreateSerializer):
             'email', 'username', 'first_name', 'last_name', 'password'
         )
         read_only_fields = (
-        'id',
+            'id',
         )
 
 
@@ -204,14 +210,13 @@ class RecipeListSerializer(serializers.ModelSerializer):
     author = UserSerializer()
     ingredients = serializers.SerializerMethodField()
     is_favorited = serializers.SerializerMethodField()
-    # is_in_shopping_cart = serializers.SerializerMethodField()
+    is_in_shopping_cart = serializers.SerializerMethodField()
 
     class Meta:
         model = Recipe
         fields = [
             'id', 'tags', 'author', 'ingredients',
-            'is_favorited',
-            # 'is_in_shopping_cart',
+            'is_favorited', 'is_in_shopping_cart',
             'name', 'image', 'text', 'cooking_time'
         ]
 
@@ -225,14 +230,14 @@ class RecipeListSerializer(serializers.ModelSerializer):
             return False
         return Favorites.objects.filter(user=request.user, recipe=obj).exists()
 
-    # def get_is_in_shopping_cart(self, obj):
-    #     request = self.context.get('request')
-    #     if not request or request.user.is_anonymous:
-    #         return False
-    #     return PurchaseList.objects.filter(
-    #         user=request.user,
-    #         recipe=obj
-    #     ).exists()
+    def get_is_in_shopping_cart(self, obj):
+        request = self.context.get('request')
+        if not request or request.user.is_anonymous:
+            return False
+        return Cart.objects.filter(
+            user=request.user,
+            recipe=obj
+        ).exists()
 
 
 class ShortRecipeSerializer(serializers.ModelSerializer):
@@ -277,6 +282,11 @@ class CreateRecipeSerializer(serializers.ModelSerializer):  #TODO: validation fo
             author=request.user,
             name=data['name'], text=data['text'])
         if (request.method == 'POST' and object.exists()):
+            raise serializers.ValidationError(
+                RECIPE_UNIQUE_CONSTRAINT_MESSAGE
+            )
+        if (request.method == 'DELETE' and
+            request.user != data['recipe'].author):
             raise serializers.ValidationError(
                 RECIPE_UNIQUE_CONSTRAINT_MESSAGE
             )

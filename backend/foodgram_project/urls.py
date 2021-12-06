@@ -25,7 +25,7 @@ from django.utils.translation import \
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/', include('backend.api.urls')),
+    path('api/', include('api.urls')),
     path(
         'redoc/',
         TemplateView.as_view(template_name='redoc.html'),

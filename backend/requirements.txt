@@ -21,7 +21,7 @@ social-auth-app-django  # for auth through social nets
 
 django_filter
 django-extra-fields
-Pillow=8.4.0 # for images in the "Recipe" model
+Pillow==8.4.0 # for images in the "Recipe" model
 
 # PEP checks
 flake8
@@ -31,7 +31,7 @@ flake8-return
 flake8-isort # https://pypi.org/project/flake8-isort/
 
 
-npm # https://nodejs.org/en/about/
+# npm # https://nodejs.org/en/about/
     # npm init -y
     # npm i webpack webpack-cli --save-dev
     # npm i @babel/core babel-loader @babel/preset-env @babel/preset-react --save-dev
@@ -41,3 +41,6 @@ npm # https://nodejs.org/en/about/
     # npm install react-router-dom
     # npm install @material-ui/icons
     # after configuring all app files execute: "np run dev"
+
+
+gunicorn==20.1.0

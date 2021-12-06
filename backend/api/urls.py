@@ -16,11 +16,19 @@ Including another URLconf
 from django.conf.urls import url
 from rest_framework_simplejwt.views import TokenRefreshView
 from django.urls import include, path
-from rest_framework import routers
-from backend.api import views
+from rest_framework.routers import DefaultRouter
+from . import views
+from django.urls import re_path
+from djoser import views as django_views
+from djoser.urls import authtoken
 
 
-router = routers.DefaultRouter()
+router = DefaultRouter()
+
+router.register(
+    "users",
+    views.UserViewSet
+)
 router.register(
     r'tags',
     views.TagViewSet,
@@ -35,7 +43,6 @@ router.register(
     basename='ingredients')
 
 urlpatterns = [
-    # path('auth/', include(authpatterns)),
     path(
         r'users/subscriptions/',
         views.list_my_followings,
@@ -60,7 +67,18 @@ urlpatterns = [
         r'recipes/download_shopping_cart/',
         views.DownloadCartView.as_view(),
         name='carts'
-    ),
-    path('', include('djoser.urls')),
+    ),  # amends basic djoser views
+    # path('', include('djoser.urls')),
+    path(
+        r'auth/token/login/',
+        views.CustomTokenCreateView.as_view(),
+        name="login"
+    ),  # amends basic djoser views
+    path(
+        r'auth/token/logout/',
+        views.CustomTokenDestroyView.as_view(),
+        name="logout"
+    ),  # amends basic djoser views
+    path('auth/', include('djoser.urls.authtoken')),
     path('', include(router.urls)),
 ]

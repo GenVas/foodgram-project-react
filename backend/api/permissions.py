@@ -1,6 +1,6 @@
 from rest_framework import permissions
 
-from backend.users.models import UserRole
+from users.models import UserRole
 
 
 class IsAdmin(permissions.IsAuthenticated):
@@ -20,3 +20,17 @@ class IsAuthorOrReadOnly(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         return (request.method in permissions.SAFE_METHODS
                 or obj.author == request.user)
+
+
+class IsAdminOrReadOnly(IsAdmin):
+    """Manage permissions.
+    SAFE methods allowed for anyone,
+    inlcuding not authenticateed.
+    `POST` allowed for admin.
+    Other methods allowed for admin.
+    """
+
+    def has_permission(self, request, view):
+        return (
+            request.method in permissions.SAFE_METHODS
+            or super().has_permission(request, view))

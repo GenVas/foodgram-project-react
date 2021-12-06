@@ -47,12 +47,11 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'djoser',
-    'backend.users',
-    'backend.recipes',
-    'backend.api',
+    'users',
+    'recipes',
+    'api',
     'colorfield',
     'rest_framework.authtoken',
-    # 'frontend'
 ]
 
 MIDDLEWARE = [
@@ -79,7 +78,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 MEDIA_URL = "/media/"
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 
-
+TEMPLATES_DIR = os.path.join(BASE_DIR, "templates")
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -135,9 +134,6 @@ AUTH_PASSWORD_VALIDATORS = [
 
 
 REST_FRAMEWORK = {
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
-    'PAGE_SIZE': 10,
-
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],
@@ -145,19 +141,28 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
     ],
+
     'DEFAULT_FILTER_BACKENDS': [
         'django_filters.rest_framework.DjangoFilterBackend',
     ],
+
+    'DEFAULT_PAGINATION_CLASS':
+        # 'rest_framework.pagination.LimitOffsetPagination',
+        'api.paginators.CustomPageNumberPaginator',
+
     'PAGE_SIZE': 6,
 }
 
 DJOSER = {
     'SERIALIZERS': {
-        'user': 'backend.api.serializers.UserSerializer',
-        'current_user': 'backend.api.serializers.UserSerializer',
-        'user_create': 'backend.api.serializers.CustomUserCreateSerializer',
+        'user': 'api.serializers.UserSerializer',
+        'current_user': 'api.serializers.UserSerializer',
+        'user_create': 'api.serializers.CustomUserCreateSerializer',
+        'token_create': 'api.serializers.CustomTokenCreateSerializer',
         # 'messages': 'backend.api.serializers.CustomMessages',
+
     },
+    'LOGIN_FIELD': 'email',
 }
 
 # Internationalization
