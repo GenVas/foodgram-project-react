@@ -1,3 +1,5 @@
+import re
+from django.core.exceptions import ObjectDoesNotExist
 from smtplib import SMTPException
 from django.views.decorators.csrf import csrf_protect
 from django.shortcuts import get_object_or_404
@@ -55,7 +57,7 @@ RECIPE_REMOVED_FROM_CART = _(
 )
 END_OF_LIST = _('End of list')
 DOWNLOAD_CART_PRINT_LINE = '{} ({}) - {} \n'
-
+EMPTY_CART_LIST = _('Cart list is empty')
 
 class UserViewSet(DjoserUserViewSet):
     '''Viewset amends standard djoser viewset in order to 
@@ -187,7 +189,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
     '''Viewset for viewing and managing Recipes'''
     filterset_class = RecipeFilter
     ordering_fields = ('name',)
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    # permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    permission_classes = [IsAuthorOrReadOnly]
     pagination_class = CustomPageNumberPaginator  # TODO
     queryset = Recipe.objects.all()
 
@@ -213,7 +216,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
 class ManageFavoritesViewSet(views.APIView):
     ''' Viewset for adding or removing recipes
     to/from Favorites for a user'''
-
+    
     def get(self, request, recipe_id):
         data = {'user': request.user.id,
                 'recipe': recipe_id}
@@ -234,9 +237,15 @@ class ManageFavoritesViewSet(views.APIView):
         )
 
     def delete(self, request, recipe_id):
-        favorite_record = get_object_or_404(
-            Favorites, user=request.user.id, recipe__id=recipe_id
-        )
+        try:
+            favorite_record = get_object_or_404(
+                Favorites, user=request.user.id, recipe__id=recipe_id
+            )
+        except Exception as exception:
+            return Response(
+                {"errors": f'{exception}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         data = {
             'user': request.user.id,
             'recipe': recipe_id
@@ -308,20 +317,24 @@ class DownloadCartView(views.APIView):
         cart = request.user.cart_holder.all()
         download_list = {}
         for item in cart:
-            ingredients = item.recipe.ingredientrecipe_set.all()
+            ingredients = item.recipe.portioned.all()
             for ingredient in ingredients:
                 name = ingredient.ingredient.name
                 amount = ingredient.amount
                 unit = ingredient.ingredient.measurement_unit
-                download_list[name] = ({'amount': amount, 'unit': unit} if (
-                    name not in download_list) else (
+                if name not in download_list:
+                    download_list[name] = {
+                        'amount': amount,
+                        'unit': unit
+                    }
+                else:
+                    download_list[name]['amount'] = (
                         download_list[name]['amount'] + amount
-                ))
-                print(download_list[name])
-        printlist = []
+                    )
+        output_list = []
 
         for item in download_list:
-            printlist.append(
+            output_list.append(
                 DOWNLOAD_CART_PRINT_LINE.format(
                     item,
                     download_list[item]['unit'],
@@ -329,8 +342,10 @@ class DownloadCartView(views.APIView):
                 )
             )
 
-        printlist.append('\n' + f'{END_OF_LIST}')
-        response = HttpResponse(printlist,'Content-Type: application/pdf') # noqa
+        if len(output_list) == 0:
+            output_list = EMPTY_CART_LIST
+
+        response = HttpResponse(output_list,'Content-Type: application/pdf') # noqa
         response['Content-Disposition'] = "attachment; filename='cart.pdf'"
         return response
 

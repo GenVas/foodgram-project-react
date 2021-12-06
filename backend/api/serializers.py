@@ -14,7 +14,7 @@ from djoser.constants import Messages
 from django.utils.translation import gettext_lazy as _
 # from rest_framework.views import exception_handler
 from djoser.serializers import TokenCreateSerializer
-
+from rest_framework.exceptions import PermissionDenied
 
 POSITIVE_VALUE_REQUIRED = _('Value of ingredient must be positive')
 UNABLE_TO_SIGN_FOR_YOURSELF = _('Unable to sign up for yourself')
@@ -25,6 +25,7 @@ RECIPE_UNIQUE_CONSTRAINT_MESSAGE = _(
     'with the same name and text desciption.'
     )
 RECIPE_IS_ALREADY_IN_THE_SHOPPING_CART = _('Recipe is already in your shopping cart')
+ONLY_AUTHOR_CAN_DELETE_RECIPE = _('Only author can delete the recipe')
 
 
 class CustomMessages(Messages):
@@ -285,11 +286,10 @@ class CreateRecipeSerializer(serializers.ModelSerializer):  #TODO: validation fo
             raise serializers.ValidationError(
                 RECIPE_UNIQUE_CONSTRAINT_MESSAGE
             )
-        if (request.method == 'DELETE' and
-            request.user != data['recipe'].author):
-            raise serializers.ValidationError(
-                RECIPE_UNIQUE_CONSTRAINT_MESSAGE
-            )
+        if (
+            request.method == 'DELETE' and request.user != data[
+                'recipe'].author):
+            raise serializers.ValidationError(ONLY_AUTHOR_CAN_DELETE_RECIPE)
         return data
 
     def create(self, validated_data):

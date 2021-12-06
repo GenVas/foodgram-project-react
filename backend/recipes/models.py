@@ -131,11 +131,9 @@ class Recipe(models.Model):
 
 
 class IngredientRecipe(models.Model):
-    recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
+    recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE, related_name='portioned')
     ingredient = models.ForeignKey(Ingredient, on_delete=models.CASCADE)
-    amount = models.DecimalField(
-        max_digits=6,
-        decimal_places=2,
+    amount = models.PositiveIntegerField(
         verbose_name=_('amount'),
         blank=False,
         validators=[validators.MinValueValidator(limit_value=0)]
