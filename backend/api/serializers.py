@@ -1,20 +1,13 @@
-from django.core.exceptions import ValidationError
-from django.shortcuts import get_object_or_404
-from rest_framework import serializers
-from drf_extra_fields.fields import Base64ImageField
 from django.db.models import F
-from users.models import User
-from recipes.models import (
-    Cart, Favorites, Following,
-    Ingredient, IngredientRecipe, Recipe,
-    Tag, )
-from rest_framework.validators import UniqueTogetherValidator
-from djoser.serializers import UserCreateSerializer
-from djoser.constants import Messages
+from django.shortcuts import get_object_or_404
 from django.utils.translation import gettext_lazy as _
-# from rest_framework.views import exception_handler
-from djoser.serializers import TokenCreateSerializer
-from rest_framework.exceptions import PermissionDenied
+from djoser.constants import Messages
+from djoser.serializers import TokenCreateSerializer, UserCreateSerializer
+from drf_extra_fields.fields import Base64ImageField
+from recipes.models import (Cart, Favorites, Following, Ingredient,
+                            IngredientRecipe, Recipe, Tag)
+from rest_framework import serializers
+from users.models import User
 
 POSITIVE_VALUE_REQUIRED = _('Value of ingredient must be positive')
 UNABLE_TO_SIGN_FOR_YOURSELF = _('Unable to sign up for yourself')
@@ -24,12 +17,19 @@ RECIPE_UNIQUE_CONSTRAINT_MESSAGE = _(
     'Author can not have multiple recipes '
     'with the same name and text desciption.'
     )
-RECIPE_IS_ALREADY_IN_THE_SHOPPING_CART = _('Recipe is already in your shopping cart')
+RECIPE_IS_ALREADY_IN_THE_SHOPPING_CART = _(
+    'Recipe is already in your shopping cart'
+)
 ONLY_AUTHOR_CAN_DELETE_RECIPE = _('Only author can delete the recipe')
+NEGATIVE_INGREDIENT_NUMBER_ERROR = _(
+    'Number of ingredients cannot be negarive integer'
+)
 
 
 class CustomMessages(Messages):
-    INVALID_CREDENTIALS_ERROR = _('Unable to log in with provided credentials.')
+    INVALID_CREDENTIALS_ERROR = _(
+        'Unable to log in with provided credentials.'
+    )
     INACTIVE_ACCOUNT_ERROR = _('User account is disabled.')
     INVALID_TOKEN_ERROR = _('Invalid token for given user.')
     INVALID_UID_ERROR = _("Invalid user id or user doesn't exist.")
@@ -102,13 +102,6 @@ class TagSerializer(serializers.ModelSerializer):
 
 
 class IngredientSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = Ingredient
-        fields = ('id', 'name', 'measurement_unit')
-
-
-class IngredientSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ingredient
         fields = ('id', 'name', 'measurement_unit')
@@ -123,15 +116,16 @@ class SimpleRecipeSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'image', 'cooking_time')
 
 
-
-## Working with follow models: following and unfollowing users, dispalying
-## list of subscriptions for authorized user
+# Working with follow models: following and unfollowing users, dispalying
+# list of subscriptions for authorized user
 
 
 class SubscribersSerializer(serializers.ModelSerializer):
     ''''This serializer is serving FollowingBaseSerializer below
-    for dispalying fields in line with requested documentation'''
-    recipes = SimpleRecipeSerializer(many=True, read_only=True)
+    for dispalying fields in line with requested documentation.
+    It also serves ListMyFollowingsViewSet'''
+    # recipes = SimpleRecipeSerializer(many=True, read_only=True)
+    recipes = serializers.SerializerMethodField()
     recipes_count = serializers.SerializerMethodField()
     is_subscribed = serializers.SerializerMethodField()
 
@@ -150,6 +144,19 @@ class SubscribersSerializer(serializers.ModelSerializer):
         if not request or request.user.is_anonymous:
             return False
         return Following.objects.filter(user=obj, author=request.user).exists()
+
+    def get_recipes(self, obj):
+        '''method field allows to set
+        length of subset with query pamaneter through nested serializer'''
+        request = self.context.get('request')
+        limit = request.query_params.get('recipes_limit')
+        recipes = obj.recipes.all()[
+            :int(limit)
+        ] if limit else obj.recipes.all()
+
+        return SimpleRecipeSerializer(
+            recipes, many=True, read_only=True,
+        ).data
 
 
 class SimpleFollowSerializer(serializers.ModelSerializer):
@@ -190,9 +197,7 @@ class FollowingBaseSerializer(serializers.ModelSerializer):
         ).data
 
 
-## Recipes: listing, crating and adding to favorites
-
-
+# Recipes: listing, crating and adding to favorites
 class IngredientRecipeSerializer(serializers.ModelSerializer):
     id = serializers.ReadOnlyField(source='ingredient.id')
     name = serializers.ReadOnlyField(source='ingredient.name')
@@ -206,7 +211,7 @@ class IngredientRecipeSerializer(serializers.ModelSerializer):
 
 
 class RecipeListSerializer(serializers.ModelSerializer):
-    
+
     tags = TagSerializer(many=True)
     author = UserSerializer()
     ingredients = serializers.SerializerMethodField()
@@ -259,7 +264,7 @@ class AddIngredientToRecipeSerializer(serializers.ModelSerializer):
         fields = ('id', 'amount')
 
 
-class CreateRecipeSerializer(serializers.ModelSerializer):  #TODO: validation for repeated recipes
+class CreateRecipeSerializer(serializers.ModelSerializer):
     '''Serializer for creating, updating, and deleting recipes'''
     image = Base64ImageField(max_length=None, use_url=True)
     tags = serializers.PrimaryKeyRelatedField(
@@ -299,8 +304,7 @@ class CreateRecipeSerializer(serializers.ModelSerializer):  #TODO: validation fo
         for ingredient in ingredients:
             if ingredient['amount'] < 0:
                 raise serializers.ValidationError(
-                    'Количество ингредиента не может быть '
-                    'отрицательным числом.'
+                    NEGATIVE_INGREDIENT_NUMBER_ERROR
                 )
         recipe = Recipe.objects.create(**validated_data)
         recipe.tags.set(tags)

@@ -1,21 +1,12 @@
-# from enum import unique
-import re
 from colorfield.fields import ColorField
 from django.contrib.auth import get_user_model
 from django.core import validators
 from django.db import models
-from django.utils.translation import \
-    ugettext_lazy as _  # TODO: переделать в перевод
+from django.utils.translation import ugettext_lazy as _
 
 from .validators import slug_regex_validator
 
-# from users.models import User
-
 User = get_user_model()
-
-# from django.db.models.signals import post_save
-# from django.dispatch import receiver
-# from django.utils.datetime_safe import datetime
 
 
 CART_STRING_METHOD = _('User: {} has {} items in their cart')
@@ -131,7 +122,11 @@ class Recipe(models.Model):
 
 
 class IngredientRecipe(models.Model):
-    recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE, related_name='portioned')
+    recipe = models.ForeignKey(
+        Recipe,
+        on_delete=models.CASCADE,
+        related_name='portioned'
+    )
     ingredient = models.ForeignKey(Ingredient, on_delete=models.CASCADE)
     amount = models.PositiveIntegerField(
         verbose_name=_('amount'),
@@ -220,14 +215,3 @@ class Favorites(models.Model):
 
     def __str__(self):
         return FAVORITES_STRING_METHOD.format(self.user.username)
-
-
-# https://stackoverflow.com/questions/48716346/django-cart-and-item-model-getting-amount-to-update
-# @receiver(post_save, sender=Cart_entry)
-# def update_cart(sender, instance, **kwargs):
-#     line_cost = instance.amount * instance.product.cost
-#     instance.cart.count += instance.amount
-#     instance.cart.updated = datetime.now()
-
-
-

@@ -1,49 +1,29 @@
-import re
-from django.core.exceptions import ObjectDoesNotExist
-from smtplib import SMTPException
-from django.views.decorators.csrf import csrf_protect
-from django.shortcuts import get_object_or_404
-from django.db.models.query import QuerySet
-from django.http import HttpResponse
-from django.http import JsonResponse
-from django.core.mail import EmailMessage
-from rest_framework import permissions, viewsets, pagination
-from rest_framework.pagination import PageNumberPagination
-from rest_framework import (filters, pagination, permissions,
-                            status, views, viewsets)
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
-
-from api.serializers import (
-    ManageCartSerializer,
-    CreateRecipeSerializer,
-    SubscribersSerializer,
-    ManageFavoriteSerializer,
-    TagSerializer,
-    IngredientSerializer,
-    FollowingBaseSerializer,
-    SimpleFollowSerializer,
-    RecipeListSerializer
-    )
-from .filters import IngredientNameFilter, RecipeFilter
-from django.utils.translation import ugettext_lazy as _
-
-from recipes.models import (
-    Cart, Favorites, Following, Ingredient, Recipe, Tag
-)
-from users.models import User
-from .permissions import IsAdmin, IsAuthorOrReadOnly, IsAdminOrReadOnly
-from .paginators import CustomPageNumberPaginator
-from djoser.views import UserViewSet as DjoserUserViewSet
-from djoser.views import TokenCreateView, TokenDestroyView
-from rest_framework.pagination import LimitOffsetPagination
-from djoser.conf import settings
-from djoser.compat import get_user_email
-
-# from django import utils
-from rest_framework.decorators import action
+from api.serializers import (CreateRecipeSerializer, FollowingBaseSerializer,
+                             IngredientSerializer, ManageCartSerializer,
+                             ManageFavoriteSerializer, RecipeListSerializer,
+                             SimpleFollowSerializer, SubscribersSerializer,
+                             TagSerializer)
 from django.contrib.auth import update_session_auth_hash
+from django.core.mail import EmailMessage
+from django.http import HttpResponse
+from django.shortcuts import get_object_or_404
+from django.utils.translation import ugettext_lazy as _
 from djoser import utils
+from djoser.compat import get_user_email
+from djoser.conf import settings
+from djoser.views import TokenCreateView, TokenDestroyView
+from djoser.views import UserViewSet as DjoserUserViewSet
+from recipes.models import Cart, Favorites, Following, Ingredient, Recipe, Tag
+from rest_framework import (filters, pagination, permissions, status, views,
+                            viewsets)
+from rest_framework.decorators import action
+from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.response import Response
+from users.models import User
+
+from .filters import IngredientNameFilter, RecipeFilter
+from .paginators import CustomPageNumberPaginator
+from .permissions import IsAdminOrReadOnly, IsAuthorOrReadOnly
 
 OBJECT_NOT_FOUND = _('Object not found')
 SUCCESSFULLY_UNFOLLOWED = _(
@@ -59,9 +39,10 @@ END_OF_LIST = _('End of list')
 DOWNLOAD_CART_PRINT_LINE = '{} ({}) - {} \n'
 EMPTY_CART_LIST = _('Cart list is empty')
 
+
 class UserViewSet(DjoserUserViewSet):
-    '''Viewset amends standard djoser viewset in order to 
-    receive targeted response code 200 '''
+    '''Viewset amends standard djoser viewset in
+    order to receive targeted response code 200 '''
     @action(["post"], detail=False)
     def set_password(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -111,13 +92,12 @@ class TagViewSet(viewsets.ModelViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
     ordering_fields = ('name',)
-    # filterset_class = TagFilter  # TODO
     pagination_class = pagination.LimitOffsetPagination
     permission_classes = [IsAdminOrReadOnly]
 
 
 # example: http://127.0.0.1:8000/api/ingredients?search=бур
-class IngredientViewSet(viewsets.ReadOnlyModelViewSet):  # TODO changes only for Admin
+class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
     permission_classes = [permissions.AllowAny, ]
@@ -127,18 +107,13 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):  # TODO changes only for
     filterset_class = IngredientNameFilter
 
 
-@api_view(['get'])
-def list_my_followings(request):
-    followed_users = User.objects.filter(following__user=request.user)
-    paginator = PageNumberPagination()
-    paginator.page_size = 10
-    result_page = paginator.paginate_queryset(followed_users, request)
-    serializer = SubscribersSerializer(
-        result_page,
-        many=True,
-        context={'current_user': request.user}
-    )
-    return paginator.get_paginated_response(serializer.data)
+class ListMyFollowingsViewSet(viewsets.ModelViewSet):
+    serializer_class = SubscribersSerializer
+    pagination_class = CustomPageNumberPaginator
+
+    def get_queryset(self):
+        queryset = User.objects.filter(following__user=self.request.user)
+        return queryset
 
 
 # https://www.django-rest-framework.org/api-guide/views/
@@ -149,8 +124,11 @@ class ManageFollowingsViewSet(views.APIView):
         return followings
 
     def get_serializer_class(self, *args, **kwargs):
-        return (FollowingBaseSerializer(*args, **kwargs) if self.request.method == 'GET' else
-                SimpleFollowSerializer(*args, **kwargs))
+        return (
+            FollowingBaseSerializer(*args, **kwargs) if
+            self.request.method == 'GET' else
+            SimpleFollowSerializer(*args, **kwargs)
+        )
 
     def get(self, request, user_id):
         data = {'user': request.user.id,
@@ -184,7 +162,7 @@ class ManageFollowingsViewSet(views.APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-## Working with recipes: listing, adding recipes, managing favorites for recipes
+# Working with recipes: listing, adding recipes, managing favorites for recipes
 class RecipeViewSet(viewsets.ModelViewSet):
     '''Viewset for viewing and managing Recipes'''
     filterset_class = RecipeFilter
@@ -212,11 +190,11 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return queryset
 
 
-## Managing user's list of favorites for recipes
+# Managing user's list of favorites for recipes
 class ManageFavoritesViewSet(views.APIView):
     ''' Viewset for adding or removing recipes
     to/from Favorites for a user'''
-    
+
     def get(self, request, recipe_id):
         data = {'user': request.user.id,
                 'recipe': recipe_id}
@@ -348,44 +326,3 @@ class DownloadCartView(views.APIView):
         response = HttpResponse(output_list,'Content-Type: application/pdf') # noqa
         response['Content-Disposition'] = "attachment; filename='cart.pdf'"
         return response
-
-
-# class ManageFollowingsViewSet(views.APIView):
-#     ''' Viewset for adding or removing subscriptions for a user'''
-#     def get_queryset(self):
-#         return Following.objects.all()
-
-#     def get_serializer_class(self, *args, **kwargs):
-#         return (FollowingBaseSerializer(*args, **kwargs) if self.request.method == 'GET' else
-#                 SimpleFollowSerializer(*args, **kwargs))
-
-#     def get(self, request, user_id):
-#         data = {'user': request.user.id,
-#                 'author': user_id}
-#         context = {'request': request}
-#         serializer = self.get_serializer_class(
-#             data=data,
-#             context=context
-#         )
-#         if serializer.is_valid(raise_exception=True):
-#             serializer.save()
-#             return Response(serializer.data, status.HTTP_201_CREATED)
-#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-#     def delete(self, request, user_id):
-#         following_record = get_object_or_404(
-#             Following, user=request.user.id, author=user_id
-#         )
-#         data = {
-#             'user': request.user.id,
-#             'author': user_id
-#         }
-#         context = {'request': request}
-#         serializer = self.get_serializer_class(data=data, context=context)
-#         if serializer.is_valid(raise_exception=True):
-#             following_record.delete()
-#             return Response(
-#                 SUCCESSFULLY_UNFOLLOWED.format(user_id),
-#                 status.HTTP_204_NO_CONTENT
-#             )
-#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

@@ -1,6 +1,4 @@
 import django_filters as filters
-from recipes.models import Cart
-
 from recipes.models import Ingredient, Recipe
 from users.models import User
 
