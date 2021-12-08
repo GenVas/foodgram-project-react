@@ -22,12 +22,12 @@ class IsAuthorOrReadOnly(permissions.BasePermission):
 
 
 class IsAdminOrReadOnly(IsAdmin):
-    """Manage permissions.
+    '''Manage permissions.
     SAFE methods allowed for anyone,
     inlcuding not authenticateed.
     `POST` allowed for admin.
     Other methods allowed for admin.
-    """
+    '''
 
     def has_permission(self, request, view):
         return (

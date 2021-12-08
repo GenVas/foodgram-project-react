@@ -9,19 +9,19 @@ HELP_TEXT_FOR_USER_ACTIVE_FIELD = _(
 
 
 class UserRole:
+    '''Class descibes possible roles of a user'''
     USER = "user"
-    # MODERATOR = "moderator"
     ADMIN = "admin"
 
 
 ROLE_CHOICES = (
     (UserRole.USER, _("User")),
-    # (UserRole.MODERATOR, "модератор"),
     (UserRole.ADMIN, _("Administrator")),
 )
 
 
 class User(AbstractUser):
+    '''Custom Abstract user class'''
 
     username = models.CharField(
         verbose_name=_("Name"),

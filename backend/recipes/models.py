@@ -4,13 +4,12 @@ from django.core import validators
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
 
-from .validators import slug_regex_validator
+from .validators import SlugRegexValidator
 
 User = get_user_model()
 
 
 CART_STRING_METHOD = _('User: {} has {} items in their cart')
-CART_ENTRY_STRING_METHOD = _('This entry contains {} {}(s).')
 FAVORITES_STRING_METHOD = _("Favorites for username '{}'")
 INGREDIENT_RECIPE_STR = _('recipe name: {}, '
                           'ingredient: {}, '
@@ -19,6 +18,7 @@ CART_STRING_METHOD = _('Cart for {}')
 
 
 class Tag(models.Model):
+    '''Model for Tags'''
     name = models.CharField(
         max_length=200,
         verbose_name=_('Name'),
@@ -31,7 +31,7 @@ class Tag(models.Model):
     slug = models.SlugField(
         max_length=200,
         verbose_name=_('slug'),
-        validators=[slug_regex_validator]
+        validators=[SlugRegexValidator]
     )
 
     class Meta:
@@ -44,6 +44,7 @@ class Tag(models.Model):
 
 
 class Ingredient(models.Model):
+    '''Model for Ingredients'''
     name = models.CharField(
         max_length=200,
         verbose_name=_('Name'),
@@ -65,7 +66,7 @@ class Ingredient(models.Model):
 
 
 class Recipe(models.Model):
-    # https://docs.djangoproject.com/en/3.2/ref/models/fields/#recursive-relationships
+    '''Model for Recipes'''
     author = models.ForeignKey(
         User,
         on_delete=models.DO_NOTHING,
@@ -78,20 +79,17 @@ class Recipe(models.Model):
         through='IngredientRecipe',
         verbose_name=_('Ingredients'),
         related_name='recipes'
-        # related_name='recipes',
     )
     tags = models.ManyToManyField(
         Tag,
         verbose_name=_('Tags'),
-        # related_name='recipes',
-        # on_delete=models.DO_NOTHING,
         blank=True
     )
     # https://gist.github.com/yprez/7704036
     image = models.ImageField(
         blank=False,
         verbose_name=_('Image'),
-        )  # TODO code to base64 (see link)
+        )
     name = models.CharField(
         max_length=200,
         verbose_name=_('Recipe name'),
@@ -122,6 +120,7 @@ class Recipe(models.Model):
 
 
 class IngredientRecipe(models.Model):
+    '''Model for creating certain amounts (portions) of ingredients'''
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
@@ -139,7 +138,6 @@ class IngredientRecipe(models.Model):
         verbose_name = _('Measured ingredient')
         verbose_name_plural = _('Measured ingredients')
 
-    # https://stackoverflow.com/questions/31264108/manytomanyfield-not-returning-str-object
     def __str__(self):
         return INGREDIENT_RECIPE_STR.format(
             self.recipe.name, self.ingredient,
@@ -147,6 +145,7 @@ class IngredientRecipe(models.Model):
 
 
 class Cart(models.Model):
+    '''Model for Carts (purchase lists)'''
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
@@ -176,6 +175,7 @@ class Cart(models.Model):
 
 
 class Following(models.Model):
+    '''Model for followings (subscriptions)'''
     user = models.ForeignKey(
         User, on_delete=models.CASCADE,
         related_name='follower',
@@ -199,6 +199,7 @@ class Following(models.Model):
 
 
 class Favorites(models.Model):
+    '''Model for Favorites'''
     user = models.ForeignKey(
         User, on_delete=models.CASCADE,
         related_name='collector',

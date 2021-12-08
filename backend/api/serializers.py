@@ -1,7 +1,6 @@
 from django.db.models import F
 from django.shortcuts import get_object_or_404
 from django.utils.translation import gettext_lazy as _
-from djoser.constants import Messages
 from djoser.serializers import TokenCreateSerializer, UserCreateSerializer
 from drf_extra_fields.fields import Base64ImageField
 from recipes.models import (Cart, Favorites, Following, Ingredient,
@@ -26,27 +25,13 @@ NEGATIVE_INGREDIENT_NUMBER_ERROR = _(
 )
 
 
-class CustomMessages(Messages):
-    INVALID_CREDENTIALS_ERROR = _(
-        'Unable to log in with provided credentials.'
-    )
-    INACTIVE_ACCOUNT_ERROR = _('User account is disabled.')
-    INVALID_TOKEN_ERROR = _('Invalid token for given user.')
-    INVALID_UID_ERROR = _("Invalid user id or user doesn't exist.")
-    STALE_TOKEN_ERROR = _('Stale token for given user.')
-    PASSWORD_MISMATCH_ERROR = _("The two password fields didn't match.")
-    USERNAME_MISMATCH_ERROR = _("The two {0} fields didn't match.")
-    INVALID_PASSWORD_ERROR = _('Invalid password.')
-    EMAIL_NOT_FOUND = _('User with given email does not exist.')
-    CANNOT_CREATE_USER_ERROR = _('Unable to create account.')
-
-
 class CustomTokenCreateSerializer(TokenCreateSerializer):
+    ''''Custom djoser Serializer for creating Token'''
     pass
 
 
 class CustomUserCreateSerializer(UserCreateSerializer):
-    'Custom Serializer for adding new user'
+    'Custom djoser Serializer for adding new user'
 
     class Meta:
         model = User
@@ -59,6 +44,7 @@ class CustomUserCreateSerializer(UserCreateSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
+    '''Nested serializer for RecipeListSerializer'''
     is_subscribed = serializers.SerializerMethodField()
 
     class Meta:
@@ -75,42 +61,28 @@ class UserSerializer(serializers.ModelSerializer):
         return Following.objects.filter(user=request.user, author=obj).exists()
 
 
-class CustomUserSerializer(UserSerializer):
-    'Custom Serializer for returning list of users'
-
-    class Meta:
-        model = User
-        fields = (
-            'id', 'email', 'username', 'password', 'first_name', 'last_name'
-        )
-
-
 class PasswordSerializer(serializers.Serializer):
-    '''
-    Serializer for password change endpoint.
-    '''
+    '''Serializer for password change endpoint'''
     old_password = serializers.CharField(required=True)
     new_password = serializers.CharField(required=True)
 
 
 class TagSerializer(serializers.ModelSerializer):
-    '''Serializer for genres.'''
-
+    '''Serializer for genres'''
     class Meta:
         model = Tag
         fields = ('id', 'name', 'color', 'slug')
 
 
 class IngredientSerializer(serializers.ModelSerializer):
+    '''Serializer for ingerdients'''
     class Meta:
         model = Ingredient
         fields = ('id', 'name', 'measurement_unit')
 
 
 class SimpleRecipeSerializer(serializers.ModelSerializer):
-    ''' Service serializer for nested
-        serialization - see SubscribersSerializer'''
-
+    ''' Nested serializer for SubscribersSerializer'''
     class Meta:
         model = Recipe
         fields = ('id', 'name', 'image', 'cooking_time')
@@ -121,10 +93,8 @@ class SimpleRecipeSerializer(serializers.ModelSerializer):
 
 
 class SubscribersSerializer(serializers.ModelSerializer):
-    ''''This serializer is serving FollowingBaseSerializer below
-    for dispalying fields in line with requested documentation.
+    ''''Nested serializer for FollowingBaseSerializer.
     It also serves ListMyFollowingsViewSet'''
-    # recipes = SimpleRecipeSerializer(many=True, read_only=True)
     recipes = serializers.SerializerMethodField()
     recipes_count = serializers.SerializerMethodField()
     is_subscribed = serializers.SerializerMethodField()
@@ -146,7 +116,7 @@ class SubscribersSerializer(serializers.ModelSerializer):
         return Following.objects.filter(user=obj, author=request.user).exists()
 
     def get_recipes(self, obj):
-        '''method field allows to set
+        '''Method field allows to set
         length of subset with query pamaneter through nested serializer'''
         request = self.context.get('request')
         limit = request.query_params.get('recipes_limit')
@@ -160,16 +130,16 @@ class SubscribersSerializer(serializers.ModelSerializer):
 
 
 class SimpleFollowSerializer(serializers.ModelSerializer):
-    '''Serrializer that allows to unfollow user with DELETE
-    request from ManageFollowingsViewSet'''
+    '''Nested Serrializer that allows to unfollow user with DELETE
+    through  ManageFollowingsViewSet'''
     class Meta:
         model = Following
         fields = ['user', 'author']
 
 
 class FollowingBaseSerializer(serializers.ModelSerializer):
-    '''Serrializer that allows to follow user with GET request
-    from ManageFollowingsViewSet'''
+    '''Serrializer that allows to follow user with GET through
+    ManageFollowingsViewSet'''
 
     class Meta:
         model = Following
@@ -197,8 +167,9 @@ class FollowingBaseSerializer(serializers.ModelSerializer):
         ).data
 
 
-# Recipes: listing, crating and adding to favorites
 class IngredientRecipeSerializer(serializers.ModelSerializer):
+    '''Nested serializer for RecipeListSerializer that allows to configure
+    ingredient fields'''
     id = serializers.ReadOnlyField(source='ingredient.id')
     name = serializers.ReadOnlyField(source='ingredient.name')
     measurement_unit = serializers.ReadOnlyField(
@@ -211,7 +182,7 @@ class IngredientRecipeSerializer(serializers.ModelSerializer):
 
 
 class RecipeListSerializer(serializers.ModelSerializer):
-
+    '''Serializer serves RecipeViewSet'''
     tags = TagSerializer(many=True)
     author = UserSerializer()
     ingredients = serializers.SerializerMethodField()
@@ -298,6 +269,8 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
         return data
 
     def create(self, validated_data):
+        '''Method allows to create recipe amount
+        of ingredients in one request'''
         ingredients = validated_data.pop('ingredients')
         tags = validated_data.pop('tags')
 
@@ -324,6 +297,8 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
         return recipe
 
     def update(self, instance, validated_data):
+        '''Method allows to update recipe amount
+        of ingredients in one request'''
         if 'ingredients' in self.initial_data:
             ingredients = validated_data.pop('ingredients')
 

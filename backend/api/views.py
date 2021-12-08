@@ -4,7 +4,6 @@ from api.serializers import (CreateRecipeSerializer, FollowingBaseSerializer,
                              SimpleFollowSerializer, SubscribersSerializer,
                              TagSerializer)
 from django.contrib.auth import update_session_auth_hash
-from django.core.mail import EmailMessage
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils.translation import ugettext_lazy as _
@@ -87,7 +86,7 @@ class CustomTokenDestroyView(TokenDestroyView):
 
 
 class TagViewSet(viewsets.ModelViewSet):
-    'Viewset for Tags'
+    '''Viewset for Tags'''
 
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
@@ -98,6 +97,7 @@ class TagViewSet(viewsets.ModelViewSet):
 
 # example: http://127.0.0.1:8000/api/ingredients?search=бур
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
+    '''Viewset for ingredirents'''
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
     permission_classes = [permissions.AllowAny, ]
@@ -108,20 +108,19 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class ListMyFollowingsViewSet(viewsets.ModelViewSet):
+    '''Viewset for list of followings (subscriptions)'''
     serializer_class = SubscribersSerializer
     pagination_class = CustomPageNumberPaginator
 
     def get_queryset(self):
-        queryset = User.objects.filter(following__user=self.request.user)
-        return queryset
+        return User.objects.filter(following__user=self.request.user)
 
 
 # https://www.django-rest-framework.org/api-guide/views/
 class ManageFollowingsViewSet(views.APIView):
-    ''' Viewset for adding or removing subscriptions for a user'''
+    ''' Viewset for adding or removing following (subscriptions) for a user'''
     def get_queryset(self):
-        followings = Following.objects.all()
-        return followings
+        return Following.objects.all()
 
     def get_serializer_class(self, *args, **kwargs):
         return (
@@ -162,12 +161,10 @@ class ManageFollowingsViewSet(views.APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-# Working with recipes: listing, adding recipes, managing favorites for recipes
 class RecipeViewSet(viewsets.ModelViewSet):
     '''Viewset for viewing and managing Recipes'''
     filterset_class = RecipeFilter
     ordering_fields = ('name',)
-    # permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     permission_classes = [IsAuthorOrReadOnly]
     pagination_class = CustomPageNumberPaginator  # TODO
     queryset = Recipe.objects.all()
@@ -182,15 +179,19 @@ class RecipeViewSet(viewsets.ModelViewSet):
         )
 
     def get_queryset(self):
+        """modified method works with query parameters"""
         queryset = super().get_queryset()
-        if self.request.query_params.get('is_favorited') == '1':
+        if self.request.query_params.get('is_favorited') in [
+            '1', 'true', 'True'
+        ]:
             queryset = queryset.filter(watching__user=self.request.user)
-        if self.request.query_params.get('is_in_shopping_cart') == '1':
+        if self.request.query_params.get('is_in_shopping_cart') in [
+            '1', 'true', 'True'
+        ]:
             queryset = queryset.filter(goods__user=self.request.user)
-        return queryset
+        return queryset  # noqa
 
 
-# Managing user's list of favorites for recipes
 class ManageFavoritesViewSet(views.APIView):
     ''' Viewset for adding or removing recipes
     to/from Favorites for a user'''
@@ -243,6 +244,8 @@ class ManageFavoritesViewSet(views.APIView):
 
 
 class ManageCartView(views.APIView):
+    ''' Viewset for adding or removing recipes
+    to/from Cart (purchase list) of a user'''
 
     def get(self, request, recipe_id):
         data = {
@@ -288,9 +291,9 @@ class ManageCartView(views.APIView):
 
 
 class DownloadCartView(views.APIView):
-    '''Viewset for downloading in the form of .pdf file
-    current user's cart content
-    decomposed by ingredients '''
+    '''Viewset for downloading current user's cart content
+    decomposed by ingredients in file in .pdf format
+     '''
     def get(self, request):
         cart = request.user.cart_holder.all()
         download_list = {}

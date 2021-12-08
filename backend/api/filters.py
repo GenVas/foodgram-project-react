@@ -4,6 +4,7 @@ from users.models import User
 
 
 class RecipeFilter(filters.FilterSet):
+    "Filters recipes againts tags and author"
     tags = filters.AllValuesMultipleFilter(
         field_name='tags__slug'
     )
@@ -17,6 +18,7 @@ class RecipeFilter(filters.FilterSet):
 
 
 class IngredientNameFilter(filters.FilterSet):
+    "Filters ingredients againts name and measurement_unit"
     name = filters.CharFilter(field_name='name', lookup_expr='istartswith')
 
     class Meta:

@@ -5,16 +5,11 @@ pytz==2020.1
 python-dotenv # https://pypi.org/project/python-dotenv/
 django-colorfield # HEX color field https://pypi.org/project/django-colorfield/
 sqlparse==0.3.1
-psycopg2-binary  # https://pypi.org/project/psycopg2/
-
-
-
-coverage # https://pypi.org/project/coverage/ https://coverage.readthedocs.io/en/6.1.2/#quick-start
-pytest # https://pypi.org/project/pytest/
-
+psycopg2-binary==2.8.6  # https://pypi.org/project/psycopg2/
 
 drf_yasg
 PyJWT==1.7.1
+djangorestframework
 djangorestframework-simplejwt==4.3.0
 djoser # https://djoser.readthedocs.io/en/latest/getting_started.html
 social-auth-app-django  # for auth through social nets
@@ -23,14 +18,15 @@ django_filter
 django-extra-fields
 Pillow==8.4.0 # for images in the "Recipe" model
 
-# PEP checks
 flake8
 pep8-naming
 flake8-broken-line
 flake8-return
 flake8-isort # https://pypi.org/project/flake8-isort/
+gunicorn==20.1.0
 
 
+# for further development
 # npm # https://nodejs.org/en/about/
     # npm init -y
     # npm i webpack webpack-cli --save-dev
@@ -42,5 +38,5 @@ flake8-isort # https://pypi.org/project/flake8-isort/
     # npm install @material-ui/icons
     # after configuring all app files execute: "np run dev"
 
-
-gunicorn==20.1.0
+# coverage # https://pypi.org/project/coverage/ https://coverage.readthedocs.io/en/6.1.2/#quick-start
+# pytest # https://pypi.org/project/pytest/
