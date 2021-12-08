@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'drf_yasg',
     'djoser',
     'users',
     'recipes',
@@ -98,15 +99,30 @@ TEMPLATES = [
 WSGI_APPLICATION = 'foodgram_project.wsgi.application'
 
 
-# Database
-# https://docs.djangoproject.com/en/3.0/ref/settings/#databases
-
-
+# # Database
+# # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
+# # The project was initially developed on the following database:
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+#     }
+# }
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'ENGINE': os.environ.get(
+            'DB_ENGINE', default="django.db.backends.postgresql"),
+        'NAME': os.environ.get(
+            'DB_NAME', default="postgres"),
+        'USER': os.environ.get(
+            'POSTGRES_USER', default="ostgres"),
+        'PASSWORD': os.environ.get(
+            'POSTGRES_PASSWORD', default="postgres"),
+        'HOST': os.environ.get(
+            'DB_HOST', default="db"),
+        'PORT': os.environ.get(
+            'DB_PORT', default="5432"),
     }
 }
 
@@ -167,6 +183,8 @@ DJOSER = {
 
 # Internationalization
 # https://docs.djangoproject.com/en/3.0/topics/i18n/
+
+LOCALE_PATHS = [os.path.join(BASE_DIR, 'locale')]
 
 LANGUAGE_CODE = os.environ.get("LANGUAGE_CODE", default='en')
 

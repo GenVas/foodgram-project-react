@@ -15,13 +15,12 @@ Including another URLconf
 """
 from django.conf.urls import url
 from django.contrib import admin
-from rest_framework import permissions
+from django.urls import include, path
+from django.utils.translation import ugettext_lazy as _
 from django.views.generic import TemplateView
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
-from django.urls import include, path
-from django.utils.translation import \
-    ugettext_lazy as _
+from rest_framework import permissions
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -31,7 +30,6 @@ urlpatterns = [
         TemplateView.as_view(template_name='redoc.html'),
         name='redoc'
     ),
-    # path('', include('frontend.urls')),
 ]
 
 schema_view = get_schema_view(
@@ -39,7 +37,6 @@ schema_view = get_schema_view(
         title="Records API",
         default_version='v1',
         description=_("API Documentation for FoodGram project "),
-        # terms_of_service="URL страницы с пользовательским соглашением",
         contact=openapi.Contact(email="admin@info.ru"),
         license=openapi.License(name="BSD License"),
     ),
