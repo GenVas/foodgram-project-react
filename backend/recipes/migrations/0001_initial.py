@@ -49,7 +49,7 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('name', models.CharField(max_length=200, unique=True, verbose_name='Name')),
                 ('color', colorfield.fields.ColorField(default='#FFFFFF', max_length=18, unique=True, verbose_name='HEX index of color')),
-                ('slug', models.SlugField(max_length=200, validators=[recipes.validators.slug_regex_validator], verbose_name='slug')),
+                ('slug', models.SlugField(max_length=200, validators=[recipes.validators.SlugRegexValidator], verbose_name='slug')),
             ],
             options={
                 'verbose_name': 'Tag',
