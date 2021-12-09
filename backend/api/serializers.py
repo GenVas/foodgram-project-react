@@ -2,7 +2,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.utils.translation import gettext_lazy as _
 from djoser.serializers import TokenCreateSerializer, UserCreateSerializer
 from drf_extra_fields.fields import Base64ImageField
-from recipes.models import (Cart, Favorites, Following, Ingredient,
+from recipes.models import (Cart, Favorite, Following, Ingredient,
                             IngredientRecipe, Recipe, Tag)
 from rest_framework import serializers
 from users.models import User
@@ -214,7 +214,7 @@ class RecipeListSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         if not request or request.user.is_anonymous:
             return False
-        return Favorites.objects.filter(user=request.user, recipe=obj).exists()
+        return Favorite.objects.filter(user=request.user, recipe=obj).exists()
 
     def get_is_in_shopping_cart(self, obj):
         request = self.context.get('request')
@@ -345,13 +345,13 @@ class ManageFavoriteSerializer(serializers.ModelSerializer):
     '''Serializer for including or excluding recipes
     to/from favorites for authorized user'''
     class Meta:
-        model = Favorites
+        model = Favorite
         fields = '__all__'
 
     def validate(self, data):
         request = self.context['request']
         if (request.method == 'GET'
-            and Favorites.objects.filter(
+            and Favorite.objects.filter(
                 user=request.user,
                 recipe__id=data['recipe'].id).exists()):
             raise serializers.ValidationError(

@@ -12,7 +12,7 @@ from djoser.compat import get_user_email
 from djoser.conf import settings
 from djoser.views import TokenCreateView, TokenDestroyView
 from djoser.views import UserViewSet as DjoserUserViewSet
-from recipes.models import Cart, Favorites, Following, Ingredient, Recipe, Tag
+from recipes.models import Cart, Favorite, Following, Ingredient, Recipe, Tag
 from rest_framework import (filters, pagination, permissions, status, views,
                             viewsets)
 from rest_framework.decorators import action
@@ -183,7 +183,7 @@ class ManageFavoritesViewSet(views.APIView):
     def delete(self, request, recipe_id):
         key, value = 'recipe', recipe_id
         return service_functions.custom_delete_recipe_method(
-            request, Favorites,
+            request, Favorite,
             ManageFavoriteSerializer,
             key, value, RECIPE_REMOVED_FROM_FAVORITES
             )

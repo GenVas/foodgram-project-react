@@ -14,7 +14,7 @@ FAVORITES_STRING_METHOD = _("Favorites for username '{}'")
 INGREDIENT_RECIPE_STR = _('recipe name: {}, '
                           'ingredient: {}, '
                           'amount:{} ({})')
-TAGGED_RECIPE_STR = _('recipe name: {}, tag: {}, ')
+TAGGED_RECIPE_STR = _('Recipe name: {}, tag: {}, ')
 CART_STRING_METHOD = _('Cart for {}')
 
 
@@ -164,8 +164,8 @@ class Cart(models.Model):
     )
 
     class Meta:
-        verbose_name = ('Cart')
-        verbose_name_plural = ('Carts')
+        verbose_name = _('Cart')
+        verbose_name_plural = _('Carts')
         ordering = ('-updated',)
         constraints = [
             models.UniqueConstraint(fields=['user', 'recipe'],
@@ -193,14 +193,14 @@ class Following(models.Model):
                                     name='unique_follow'),
         ]
         ordering = ['author']
-        verbose_name = 'Following'
-        verbose_name_plural = 'Followings'
+        verbose_name = _('Following')
+        verbose_name_plural = _('Followings')
 
     def __str__(self):
         return self.author.username
 
 
-class Favorites(models.Model):
+class Favorite(models.Model):
     '''Model for Favorites'''
     user = models.ForeignKey(
         User, on_delete=models.CASCADE,
@@ -213,8 +213,8 @@ class Favorites(models.Model):
     )
 
     class Meta:
-        verbose_name = 'Favorite'
-        verbose_name_plural = 'Favorites'
+        verbose_name = _('Favorite')
+        verbose_name_plural = _('Favorites')
         constraints = [
             models.UniqueConstraint(fields=['user', 'recipe'],
                                     name='unique_favorites'),
