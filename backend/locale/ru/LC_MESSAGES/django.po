@@ -43,15 +43,15 @@ msgstr "Автор не может меть несколько рецептов 
 
 #: api/serializers.py:21
 msgid "Recipe is already in your shopping cart"
-msgstr "Рецепт уже ннаходится в вашей корзине"
+msgstr "Рецепт уже находится в вашей корзине"
 
-#: api/serializers.py:23
+#: api/serializers.py:24
 msgid "Only author can delete the recipe"
 msgstr "Удалить рецепт может только его автор"
 
-#: api/serializers.py:25
-msgid "Number of ingredients cannot be negarive integer"
-msgstr "Количество ингрезиентов не может быть отрицательным значением"
+#: api/serializers.py:27
+msgid "Negative value for {} is not allowed"
+msgstr "Отрицательнельное значение для {} недопустимо"
 
 #: api/views.py:28
 msgid "Object not found"

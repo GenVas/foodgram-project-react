@@ -14,6 +14,7 @@ FAVORITES_STRING_METHOD = _("Favorites for username '{}'")
 INGREDIENT_RECIPE_STR = _('recipe name: {}, '
                           'ingredient: {}, '
                           'amount:{} ({})')
+TAGGED_RECIPE_STR = _('recipe name: {}, tag: {}, ')
 CART_STRING_METHOD = _('Cart for {}')
 
 
@@ -83,7 +84,8 @@ class Recipe(models.Model):
     tags = models.ManyToManyField(
         Tag,
         verbose_name=_('Tags'),
-        blank=True
+        blank=True,
+        related_name='recipes'
     )
     # https://gist.github.com/yprez/7704036
     image = models.ImageField(

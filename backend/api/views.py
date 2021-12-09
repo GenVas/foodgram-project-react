@@ -1,3 +1,5 @@
+from re import subn
+from django.db.models import Sum
 from api.serializers import (CreateRecipeSerializer, FollowingBaseSerializer,
                              IngredientSerializer, ManageCartSerializer,
                              ManageFavoriteSerializer, RecipeListSerializer,
@@ -5,7 +7,6 @@ from api.serializers import (CreateRecipeSerializer, FollowingBaseSerializer,
                              TagSerializer)
 from django.contrib.auth import update_session_auth_hash
 from django.http import HttpResponse
-from django.shortcuts import get_object_or_404
 from django.utils.translation import ugettext_lazy as _
 from djoser import utils
 from djoser.compat import get_user_email
@@ -20,7 +21,8 @@ from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.response import Response
 from users.models import User
 
-from .filters import IngredientNameFilter, RecipeFilter
+from . import service_functions
+from .filters import IngredientNameFilter, RecipeFilter, filter_recipe_queryset
 from .paginators import CustomPageNumberPaginator
 from .permissions import IsAdminOrReadOnly, IsAuthorOrReadOnly
 
@@ -41,7 +43,7 @@ EMPTY_CART_LIST = _('Cart list is empty')
 
 class UserViewSet(DjoserUserViewSet):
     '''Viewset amends standard djoser viewset in
-    order to receive targeted response code 200 '''
+    order to receive targeted response code 200'''
     @action(["post"], detail=False)
     def set_password(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -130,35 +132,19 @@ class ManageFollowingsViewSet(views.APIView):
         )
 
     def get(self, request, user_id):
-        data = {'user': request.user.id,
-                'author': user_id}
-        context = {'request': request}
-        serializer = self.get_serializer_class(
-            data=data,
-            context=context
-        )
-        if serializer.is_valid(raise_exception=True):
-            serializer.save()
-            return Response(serializer.data, status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        key, value = 'author', user_id
+        return service_functions.custom_get_method(
+            request,
+            self.get_serializer_class,
+            key, value)
 
     def delete(self, request, user_id):
-        following_record = get_object_or_404(
-            Following, user=request.user.id, author=user_id
-        )
-        data = {
-            'user': request.user.id,
-            'author': user_id
-        }
-        context = {'request': request}
-        serializer = self.get_serializer_class(data=data, context=context)
-        if serializer.is_valid(raise_exception=True):
-            following_record.delete()
-            return Response(
-                SUCCESSFULLY_UNFOLLOWED.format(user_id),
-                status.HTTP_204_NO_CONTENT
+        key, value = 'author', user_id
+        return service_functions.custom_delete_author_method(
+            request, Following,
+            self.get_serializer_class,
+            key, value, SUCCESSFULLY_UNFOLLOWED
             )
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
@@ -166,7 +152,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     filterset_class = RecipeFilter
     ordering_fields = ('name',)
     permission_classes = [IsAuthorOrReadOnly]
-    pagination_class = CustomPageNumberPaginator  # TODO
+    pagination_class = CustomPageNumberPaginator
     queryset = Recipe.objects.all()
 
     def perform_create(self, serializer):
@@ -180,16 +166,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """modified method works with query parameters"""
-        queryset = super().get_queryset()
-        if self.request.query_params.get('is_favorited') in [
-            '1', 'true', 'True'
-        ]:
-            queryset = queryset.filter(watching__user=self.request.user)
-        if self.request.query_params.get('is_in_shopping_cart') in [
-            '1', 'true', 'True'
-        ]:
-            queryset = queryset.filter(goods__user=self.request.user)
-        return queryset  # noqa
+        return filter_recipe_queryset(self.request, self.queryset)
 
 
 class ManageFavoritesViewSet(views.APIView):
@@ -197,50 +174,20 @@ class ManageFavoritesViewSet(views.APIView):
     to/from Favorites for a user'''
 
     def get(self, request, recipe_id):
-        data = {'user': request.user.id,
-                'recipe': recipe_id}
-        context = {'request': request}
-        serializer = ManageFavoriteSerializer(
-            data=data,
-            context=context
-        )
-        if serializer.is_valid(raise_exception=True):
-            serializer.save()
-            return Response(
-                serializer.data,
-                status.HTTP_201_CREATED
-            )
-        return Response(
-            serializer.errors,
-            status=status.HTTP_400_BAD_REQUEST
+        key, value = 'recipe', recipe_id
+        return service_functions.custom_get_method(
+            request,
+            ManageFavoriteSerializer,
+            key, value
         )
 
     def delete(self, request, recipe_id):
-        try:
-            favorite_record = get_object_or_404(
-                Favorites, user=request.user.id, recipe__id=recipe_id
+        key, value = 'recipe', recipe_id
+        return service_functions.custom_delete_recipe_method(
+            request, Favorites,
+            ManageFavoriteSerializer,
+            key, value, RECIPE_REMOVED_FROM_FAVORITES
             )
-        except Exception as exception:
-            return Response(
-                {"errors": f'{exception}'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        data = {
-            'user': request.user.id,
-            'recipe': recipe_id
-        }
-        context = {'request': request}
-        serializer = ManageFavoriteSerializer(data=data, context=context)
-        if serializer.is_valid(raise_exception=True):
-            favorite_record.delete()
-            return Response(
-                RECIPE_REMOVED_FROM_FAVORITES.format(recipe_id),
-                status.HTTP_204_NO_CONTENT
-            )
-        return Response(
-            serializer.errors,
-            status=status.HTTP_400_BAD_REQUEST
-        )
 
 
 class ManageCartView(views.APIView):
@@ -248,45 +195,19 @@ class ManageCartView(views.APIView):
     to/from Cart (purchase list) of a user'''
 
     def get(self, request, recipe_id):
-        data = {
-            'user': request.user.id,
-            'recipe': recipe_id
-        }
-        context = {'request': request}
-        serializer = ManageCartSerializer(data=data, context=context)
-        if serializer.is_valid(raise_exception=True):
-            serializer.save()
-            return Response(
-                serializer.data,
-                status.HTTP_201_CREATED
-            )
-        return Response(
-            serializer.errors,
-            status=status.HTTP_400_BAD_REQUEST
+        key, value = 'recipe', recipe_id
+        return service_functions.custom_get_method(
+            request,
+            ManageCartSerializer,
+            key, value
         )
 
     def delete(self, request, recipe_id):
-        user = request.user
-        cart_recipe = get_object_or_404(
-            Cart,
-            user=user,
-            recipe__id=recipe_id
-        )
-        data = {
-            'user': request.user.id,
-            'recipe': recipe_id
-        }
-        context = {'request': request}
-        serializer = ManageFavoriteSerializer(data=data, context=context)
-        if serializer.is_valid(raise_exception=True):
-            cart_recipe.delete()
-            return Response(
-                RECIPE_REMOVED_FROM_CART.format(recipe_id),
-                status.HTTP_204_NO_CONTENT
-            )
-        return Response(
-            serializer.errors,
-            status=status.HTTP_400_BAD_REQUEST
+        key, value = 'recipe', recipe_id
+        return service_functions.custom_delete_recipe_method(
+            request, Cart,
+            ManageCartSerializer,
+            key, value, RECIPE_REMOVED_FROM_CART
         )
 
 
@@ -295,7 +216,18 @@ class DownloadCartView(views.APIView):
     decomposed by ingredients in file in .pdf format
      '''
     def get(self, request):
+
         cart = request.user.cart_holder.all()
+        print(cart)
+        cart = cart.values_list(
+            'recipe__ingredients__name',
+            'recipe__portioned__amount',
+            'recipe__ingredients__measurement_unit'
+        ).annotate('recipe__ingredients__name')
+        # # ingredients = item.recipe.ingredients_in.values_list(
+        # #     'ingredient__name', 'ingredient__measurement_unit', 'amount'
+        # # )
+        return HttpResponse(cart)
         download_list = {}
         for item in cart:
             ingredients = item.recipe.portioned.all()
@@ -329,3 +261,4 @@ class DownloadCartView(views.APIView):
         response = HttpResponse(output_list,'Content-Type: application/pdf') # noqa
         response['Content-Disposition'] = "attachment; filename='cart.pdf'"
         return response
+

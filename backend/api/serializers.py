@@ -1,5 +1,4 @@
-from django.db.models import F
-from django.shortcuts import get_object_or_404
+from django.core.exceptions import ObjectDoesNotExist
 from django.utils.translation import gettext_lazy as _
 from djoser.serializers import TokenCreateSerializer, UserCreateSerializer
 from drf_extra_fields.fields import Base64ImageField
@@ -7,6 +6,8 @@ from recipes.models import (Cart, Favorites, Following, Ingredient,
                             IngredientRecipe, Recipe, Tag)
 from rest_framework import serializers
 from users.models import User
+
+from . import service_functions
 
 POSITIVE_VALUE_REQUIRED = _('Value of ingredient must be positive')
 UNABLE_TO_SIGN_FOR_YOURSELF = _('Unable to sign up for yourself')
@@ -19,9 +20,17 @@ RECIPE_UNIQUE_CONSTRAINT_MESSAGE = _(
 RECIPE_IS_ALREADY_IN_THE_SHOPPING_CART = _(
     'Recipe is already in your shopping cart'
 )
-ONLY_AUTHOR_CAN_DELETE_RECIPE = _('Only author can delete the recipe')
-NEGATIVE_INGREDIENT_NUMBER_ERROR = _(
-    'Number of ingredients cannot be negarive integer'
+ONLY_AUTHOR_CAN_DELETE_RECIPE = _(
+    'Only author can delete the recipe'
+)
+NEGATIVE_VALUE_NOT_ALLOWED = _(
+    r"Negative value for '{}' is not allowed"
+)
+TAG_ID_ALREADY_ASSIGNED = _(
+    'Tag with ID {} was already assigned to this recipe with ID {}'
+)
+NO_INGREDIENT_IN_DATABASE = _(
+    "There is no ingredient with ID '{}' in the database"
 )
 
 
@@ -243,6 +252,7 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
         queryset=Tag.objects.all()
     )
     ingredients = AddIngredientToRecipeSerializer(many=True)
+    cooking_time = serializers.IntegerField(min_value=1)
 
     class Meta:
         model = Recipe
@@ -252,20 +262,51 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
         read_only_fields = ['author']
 
     def validate(self, data):
-        '''Repeats unqique contraint and assure that new recipe
+        '''Repeats unqique constraint and assures that new recipe
         doesnt duplicate a record'''
         request = self.context['request']
-        object = Recipe.objects.filter(
-            author=request.user,
-            name=data['name'], text=data['text'])
-        if (request.method == 'POST' and object.exists()):
+        if request.method == 'POST' and Recipe.objects.filter(
+                    author=request.user,
+                    name=data['name'],
+                    text=data['text']).exists():
             raise serializers.ValidationError(
-                RECIPE_UNIQUE_CONSTRAINT_MESSAGE
+                        RECIPE_UNIQUE_CONSTRAINT_MESSAGE
             )
+
         if (
             request.method == 'DELETE' and request.user != data[
                 'recipe'].author):
             raise serializers.ValidationError(ONLY_AUTHOR_CAN_DELETE_RECIPE)
+        return data
+
+    def validate_tags(self, data):
+        if self.context["request"].method in ['POST', 'PUT']:
+            tags_ids = self.initial_data['tags']
+            recipe_id = self.instance.id
+            for tag in tags_ids:
+                if Recipe.objects.filter(
+                    id=self.instance.id,
+                    tags__id=tag
+                ).exists():
+                    raise serializers.ValidationError(
+                        TAG_ID_ALREADY_ASSIGNED.format(tag, recipe_id)
+                    )
+        return data
+
+    def validate_ingredients(self, data):
+        if self.context["request"].method in ['POST', 'PUT']:
+            for ingredient in self.initial_data['ingredients']:
+                try:
+                    Ingredient.objects.get(id=ingredient['id'])
+                except ObjectDoesNotExist:
+                    raise serializers.ValidationError(
+                        NO_INGREDIENT_IN_DATABASE.format(ingredient['id'])
+                    )
+                if ingredient['amount'] <= 0:
+                    raise serializers.ValidationError(
+                        NEGATIVE_VALUE_NOT_ALLOWED.format('ingredient')
+                    )
+
         return data
 
     def create(self, validated_data):
@@ -273,27 +314,9 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
         of ingredients in one request'''
         ingredients = validated_data.pop('ingredients')
         tags = validated_data.pop('tags')
-
-        for ingredient in ingredients:
-            if ingredient['amount'] < 0:
-                raise serializers.ValidationError(
-                    NEGATIVE_INGREDIENT_NUMBER_ERROR
-                )
         recipe = Recipe.objects.create(**validated_data)
         recipe.tags.set(tags)
-        for ingredient in ingredients:
-            obj = get_object_or_404(Ingredient, id=ingredient['id'])
-            amount = ingredient['amount']
-            if IngredientRecipe.objects.filter(
-                    recipe=recipe,
-                    ingredient=obj
-            ).exists():
-                amount += F('amount')
-            IngredientRecipe.objects.update_or_create(
-                recipe=recipe,
-                ingredient=obj,
-                defaults={'amount': amount}
-            )
+        service_functions.calculate_ingredients(ingredients, recipe)
         return recipe
 
     def update(self, instance, validated_data):
@@ -301,39 +324,13 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
         of ingredients in one request'''
         if 'ingredients' in self.initial_data:
             ingredients = validated_data.pop('ingredients')
-
-            for ingredient in ingredients:
-                if ingredient['amount'] < 0:
-                    raise serializers.ValidationError(
-                        'Количество ингредиента не может быть '
-                        'отрицательным числом.'
-                    )
             instance.ingredients.clear()
-            for ingredient in ingredients:
-                obj = get_object_or_404(Ingredient,
-                                        id=ingredient['id'])
-                amount = ingredient['amount']
-                if IngredientRecipe.objects.filter(
-                        recipe=instance,
-                        ingredient=obj
-                ).exists():
-                    amount += F('amount')
-                IngredientRecipe.objects.update_or_create(
-                    recipe=instance,
-                    ingredient=obj,
-                    defaults={'amount': amount}
-                )
-        if 'tags' in self.initial_data:
-            tags = validated_data.pop('tags')
-            instance.tags.set(tags)
-
-        instance.name = validated_data.get('name', instance.name)
-        instance.text = validated_data.get('text', instance.text)
-        instance.cooking_time = validated_data.get(
-            'cooking_time',
-            instance.cooking_time
-        )
-        instance.image = validated_data.get('image', instance.image)
+            service_functions.calculate_ingredients(ingredients, instance)
+        tags = validated_data.pop('tags')
+        instance.tags.set(tags)
+        # updates other standard fields
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
         instance.save()
         return instance
 

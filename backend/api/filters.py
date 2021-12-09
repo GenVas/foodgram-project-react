@@ -1,4 +1,5 @@
 import django_filters as filters
+from rest_framework import filters as rest_filters
 from recipes.models import Ingredient, Recipe
 from users.models import User
 
@@ -24,3 +25,17 @@ class IngredientNameFilter(filters.FilterSet):
     class Meta:
         model = Ingredient
         fields = ('name', 'measurement_unit')
+
+
+def filter_recipe_queryset(request, queryset):
+    """Modified method works with query parameters"""
+
+    if request.query_params.get('is_favorited') in [
+        '1', 'true', 'True'
+    ]:
+        queryset = queryset.filter(watching__user=request.user)
+    if request.query_params.get('is_in_shopping_cart') in [
+        '1', 'true', 'True'
+    ]:
+        queryset = queryset.filter(goods__user=request.user)
+    return queryset  # noqa
