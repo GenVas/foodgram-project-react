@@ -29,6 +29,6 @@ class Cart(admin.ModelAdmin):
 
 
 admin.site.register(models.IngredientRecipe)
-admin.site.register(models.Favorites)
+admin.site.register(models.Favorite)
 admin.site.register(models.Following)
 admin.site.register(models.Ingredient)

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-12-07 15:23+0300\n"
+"POT-Creation-Date: 2021-12-09 23:51+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -39,19 +39,30 @@ msgstr "Рецепт уже добавлен в избранное"
 #: api/serializers.py:17
 msgid ""
 "Author can not have multiple recipes with the same name and text desciption."
-msgstr "Автор не может меть несколько рецептов с одинаковым названием и описанием"
+msgstr ""
+"Автор не может иметь несколько рецептов с одинаковым названием и описанием"
 
 #: api/serializers.py:21
 msgid "Recipe is already in your shopping cart"
-msgstr "Рецепт уже ннаходится в вашей корзине"
+msgstr "Рецепт уже находится в вашей корзине"
 
-#: api/serializers.py:23
+#: api/serializers.py:24
 msgid "Only author can delete the recipe"
 msgstr "Удалить рецепт может только его автор"
 
-#: api/serializers.py:25
-msgid "Number of ingredients cannot be negarive integer"
-msgstr "Количество ингрезиентов не может быть отрицательным значением"
+#: api/serializers.py:27
+#, fuzzy
+#| msgid "Negative value for {} is not allowed"
+msgid "Negative value for '{}' is not allowed"
+msgstr "Отрицательнельное значение для {} недопустимо"
+
+#: api/serializers.py:30
+msgid "Tag with ID {} was already assigned to this recipe with ID {}"
+msgstr "Тэг с ID {} уже был приписан рецепту с ID {}"
+
+#: api/serializers.py:33
+msgid "There is no ingredient with ID '{}' in the database"
+msgstr "В базе данных ингредиент с ID {} отсутствует"
 
 #: api/views.py:28
 msgid "Object not found"
@@ -81,7 +92,7 @@ msgstr "Конец списка"
 msgid "Cart list is empty"
 msgstr "Корзина пуста"
 
-#: foodgram_project/urls.py:41
+#: foodgram_project/urls.py:24
 msgid "API Documentation for FoodGram project "
 msgstr "Документация API для проекта FoodGram"
 
@@ -94,43 +105,43 @@ msgid "User: {} has {} items in their cart"
 msgstr "Пользователь {} имеет {} элементов в корзине"
 
 #: recipes/models.py:13
-msgid "This entry contains {} {}(s)."
-msgstr "Эта запись содержит {} {}"
-
-#: recipes/models.py:14
 msgid "Favorites for username '{}'"
 msgstr "Избранное пользователя {}"
 
-#: recipes/models.py:15
+#: recipes/models.py:14
 msgid "recipe name: {}, ingredient: {}, amount:{} ({})"
 msgstr "Название рецепта, ингрдиент: {}, количество: {} {}"
+
+#: recipes/models.py:17
+msgid "Recipe name: {}, tag: {}, "
+msgstr "Название рецепта {}, тег {}"
 
 #: recipes/models.py:18
 msgid "Cart for {}"
 msgstr "Корзина для пользователя {}"
 
-#: recipes/models.py:24 recipes/models.py:49 users/models.py:27
+#: recipes/models.py:25 recipes/models.py:51 users/models.py:27
 #: users/models.py:33
 msgid "Name"
 msgstr "Имя"
 
-#: recipes/models.py:28
+#: recipes/models.py:29
 msgid "HEX index of color"
 msgstr "HEX индекс цвета"
 
-#: recipes/models.py:33
+#: recipes/models.py:34
 msgid "slug"
 msgstr "слаг"
 
-#: recipes/models.py:39
+#: recipes/models.py:40
 msgid "Tag"
-msgstr "Тэг"
+msgstr "Тег"
 
-#: recipes/models.py:40 recipes/models.py:85
+#: recipes/models.py:41 recipes/models.py:83
 msgid "Tags"
-msgstr "Тэги"
+msgstr "Теги"
 
-#: recipes/models.py:54
+#: recipes/models.py:55
 msgid "Unit"
 msgstr "Мера"
 
@@ -138,7 +149,7 @@ msgstr "Мера"
 msgid "Ingredient"
 msgstr "Ингредиент"
 
-#: recipes/models.py:61 recipes/models.py:79
+#: recipes/models.py:61 recipes/models.py:78
 msgid "Ingredients"
 msgstr "Ингредиенты"
 
@@ -146,65 +157,91 @@ msgstr "Ингредиенты"
 msgid "Author of recipe"
 msgstr "Автор рецепта"
 
-#: recipes/models.py:93
+#: recipes/models.py:89
 msgid "Image"
 msgstr "Изображение"
 
-#: recipes/models.py:97
+#: recipes/models.py:93
 msgid "Recipe name"
 msgstr "Название рецепта"
 
-#: recipes/models.py:102
+#: recipes/models.py:97
 msgid "Recipe description"
 msgstr "Описание рецепта"
 
-#: recipes/models.py:106
+#: recipes/models.py:100
 msgid "Cooking time"
 msgstr "Время приготовления"
 
-#: recipes/models.py:112
+#: recipes/models.py:105
 msgid "Publication date"
 msgstr "Дата публикации"
 
-#: recipes/models.py:117
+#: recipes/models.py:110
 msgid "Recipe"
 msgstr "Рецепт"
 
-#: recipes/models.py:118
+#: recipes/models.py:111
 msgid "Recipes"
 msgstr "Рецепты"
 
-#: recipes/models.py:132
+#: recipes/models.py:126
 msgid "amount"
-msgstr "количество"
+msgstr "Количество"
 
-#: recipes/models.py:139
+#: recipes/models.py:132
 msgid "Measured ingredient"
-msgstr "Отмеренный ингредиент"
+msgstr "Отмеренныое количество ингредиента"
 
-#: recipes/models.py:140
+#: recipes/models.py:133
 msgid "Measured ingredients"
-msgstr "Отмеренные ингрезиенты"
+msgstr "Отмеренное количество ингредиентов"
 
-#: recipes/models.py:163
+#: recipes/models.py:160
 msgid "updated"
 msgstr "обновлено"
 
-#: recipes/models.py:165
+#: recipes/models.py:162
 msgid "Activity flag for cart"
 msgstr "Флажок активности корзины"
+
+#: recipes/models.py:167
+msgid "Cart"
+msgstr "Корзина"
+
+#: recipes/models.py:168
+msgid "Carts"
+msgstr "Корзины"
+
+#: recipes/models.py:196
+msgid "Following"
+msgstr "Подписка"
+
+#: recipes/models.py:197
+msgid "Followings"
+msgstr "Подписки"
+
+#: recipes/models.py:216
+msgid "Favorite"
+msgstr "Избранное"
+
+#: recipes/models.py:217
+msgid "Favorites"
+msgstr "Избранное"
 
 #: users/models.py:6
 msgid ""
 "Designates whether this user should be treated as active. Unselect this "
 "instead of deleting accounts."
-msgstr "Отмечает пользователя как активного. Уберите галочку, вместо удаления пользователя"
+msgstr ""
+"Отмечает пользователя как активного. Уберите галочку вместо удаления "
+"пользователя"
 
 #: users/models.py:18 users/models.py:62
 msgid "User"
 msgstr "Пользователь"
 
-#: users/models.py:20
+#: users/models.py:19
 msgid "Administrator"
 msgstr "Администратор"
 
@@ -222,8 +259,11 @@ msgstr "Роль"
 
 #: users/models.py:55
 msgid "active"
-msgstr "автивный"
+msgstr "Активный"
 
 #: users/models.py:63
 msgid "Users"
 msgstr "Пользователи"
+
+#~ msgid "This entry contains {} {}(s)."
+#~ msgstr "Эта запись содержит {} {}"
