@@ -23,11 +23,11 @@ class Tag(models.Model):
     name = models.CharField(
         max_length=200,
         verbose_name=_('Name'),
-        blank=False, unique=True
+        unique=True
     )
     color = ColorField(
         verbose_name=_('HEX index of color'),
-        blank=False, unique=True
+        unique=True
     )  # https://pypi.org/project/django-colorfield/
     slug = models.SlugField(
         max_length=200,
@@ -49,12 +49,10 @@ class Ingredient(models.Model):
     name = models.CharField(
         max_length=200,
         verbose_name=_('Name'),
-        blank=False
     )
     measurement_unit = models.CharField(
         max_length=200,
         verbose_name=_('Unit'),
-        blank=False
     )
 
     class Meta:
@@ -73,7 +71,6 @@ class Recipe(models.Model):
         on_delete=models.DO_NOTHING,
         verbose_name=_('Author of recipe'),
         related_name='recipes',
-        blank=False
     )
     ingredients = models.ManyToManyField(
         Ingredient,
@@ -89,22 +86,18 @@ class Recipe(models.Model):
     )
     # https://gist.github.com/yprez/7704036
     image = models.ImageField(
-        blank=False,
         verbose_name=_('Image'),
         )
     name = models.CharField(
         max_length=200,
         verbose_name=_('Recipe name'),
-        blank=False,
         db_index=True
     )
     text = models.TextField(
         verbose_name=_('Recipe description'),
-        blank=False
     )
     cooking_time = models.PositiveSmallIntegerField(
         verbose_name=_('Cooking time'),
-        blank=False,
         validators=[validators.MinValueValidator(limit_value=1)]
     )
     pub_date = models.DateTimeField(
@@ -131,7 +124,6 @@ class IngredientRecipe(models.Model):
     ingredient = models.ForeignKey(Ingredient, on_delete=models.CASCADE)
     amount = models.PositiveIntegerField(
         verbose_name=_('amount'),
-        blank=False,
         validators=[validators.MinValueValidator(limit_value=0)]
     )
 
@@ -139,6 +131,10 @@ class IngredientRecipe(models.Model):
         ordering = ['recipe']
         verbose_name = _('Measured ingredient')
         verbose_name_plural = _('Measured ingredients')
+        constraints = [
+            models.UniqueConstraint(fields=['recipe', 'ingredient', 'amount'],
+                                    name='unique_ingredient_portion'),
+        ]
 
     def __str__(self):
         return INGREDIENT_RECIPE_STR.format(
@@ -171,6 +167,10 @@ class Cart(models.Model):
         verbose_name = ('Cart')
         verbose_name_plural = ('Carts')
         ordering = ('-updated',)
+        constraints = [
+            models.UniqueConstraint(fields=['user', 'recipe'],
+                                    name='unique_cart'),
+        ]
 
     def __str__(self):
         return CART_STRING_METHOD.format(self.user.username)
@@ -215,6 +215,10 @@ class Favorites(models.Model):
     class Meta:
         verbose_name = 'Favorite'
         verbose_name_plural = 'Favorites'
+        constraints = [
+            models.UniqueConstraint(fields=['user', 'recipe'],
+                                    name='unique_favorites'),
+        ]
 
     def __str__(self):
         return FAVORITES_STRING_METHOD.format(self.user.username)

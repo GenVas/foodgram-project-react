@@ -1,11 +1,10 @@
-from re import subn
-from django.db.models import Sum
 from api.serializers import (CreateRecipeSerializer, FollowingBaseSerializer,
                              IngredientSerializer, ManageCartSerializer,
                              ManageFavoriteSerializer, RecipeListSerializer,
                              SimpleFollowSerializer, SubscribersSerializer,
                              TagSerializer)
 from django.contrib.auth import update_session_auth_hash
+from django.db.models import Sum
 from django.http import HttpResponse
 from django.utils.translation import ugettext_lazy as _
 from djoser import utils
@@ -216,49 +215,28 @@ class DownloadCartView(views.APIView):
     decomposed by ingredients in file in .pdf format
      '''
     def get(self, request):
-
-        cart = request.user.cart_holder.all()
-        print(cart)
-        cart = cart.values_list(
+        cart = request.user.cart_holder.values(
             'recipe__ingredients__name',
-            'recipe__portioned__amount',
             'recipe__ingredients__measurement_unit'
-        ).annotate('recipe__ingredients__name')
-        # # ingredients = item.recipe.ingredients_in.values_list(
-        # #     'ingredient__name', 'ingredient__measurement_unit', 'amount'
-        # # )
-        return HttpResponse(cart)
-        download_list = {}
-        for item in cart:
-            ingredients = item.recipe.portioned.all()
-            for ingredient in ingredients:
-                name = ingredient.ingredient.name
-                amount = ingredient.amount
-                unit = ingredient.ingredient.measurement_unit
-                if name not in download_list:
-                    download_list[name] = {
-                        'amount': amount,
-                        'unit': unit
-                    }
-                else:
-                    download_list[name]['amount'] = (
-                        download_list[name]['amount'] + amount
-                    )
-        output_list = []
+        ).order_by('recipe__ingredients__name').annotate(
+            total=Sum('recipe__portioned__amount',
+                      distinct=True)
+        )
 
-        for item in download_list:
+        output_list = []
+        for item in cart:
             output_list.append(
                 DOWNLOAD_CART_PRINT_LINE.format(
-                    item,
-                    download_list[item]['unit'],
-                    download_list[item]['amount']
+                    item.get('recipe__ingredients__name'),
+                    item.get('recipe__ingredients__measurement_unit'),
+                    item.get('total')
                 )
             )
 
         if len(output_list) == 0:
             output_list = EMPTY_CART_LIST
-
-        response = HttpResponse(output_list,'Content-Type: application/pdf') # noqa
+        response = HttpResponse(
+            output_list,
+            'Content-Type: application/pdf')
         response['Content-Disposition'] = "attachment; filename='cart.pdf'"
         return response
-
