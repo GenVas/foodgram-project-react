@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-12-09 23:51+0300\n"
+"POT-Creation-Date: 2021-12-10 18:06+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -20,49 +20,53 @@ msgstr ""
 "%10<=4 && (n%100<12 || n%100>14) ? 1 : n%10==0 || (n%10>=5 && n%10<=9) || (n"
 "%100>=11 && n%100<=14)? 2 : 3);\n"
 
-#: api/serializers.py:12
+#: api/serializers.py:11
 msgid "Value of ingredient must be positive"
 msgstr "Значание ингредиента должно быть положительным"
 
-#: api/serializers.py:13
+#: api/serializers.py:12
 msgid "Unable to sign up for yourself"
 msgstr "Невозможно подписаться на себя самого"
 
-#: api/serializers.py:14
+#: api/serializers.py:13
 msgid "You are already following this author"
 msgstr "Вы уже подписаны на этого автора"
 
-#: api/serializers.py:15
+#: api/serializers.py:14
 msgid "Recipe is already in favorites"
 msgstr "Рецепт уже добавлен в избранное"
 
-#: api/serializers.py:17
+#: api/serializers.py:16
 msgid ""
 "Author can not have multiple recipes with the same name and text desciption."
 msgstr ""
 "Автор не может иметь несколько рецептов с одинаковым названием и описанием"
 
-#: api/serializers.py:21
+#: api/serializers.py:20
 msgid "Recipe is already in your shopping cart"
 msgstr "Рецепт уже находится в вашей корзине"
 
-#: api/serializers.py:24
+#: api/serializers.py:23
 msgid "Only author can delete the recipe"
 msgstr "Удалить рецепт может только его автор"
 
-#: api/serializers.py:27
-#, fuzzy
-#| msgid "Negative value for {} is not allowed"
-msgid "Negative value for '{}' is not allowed"
-msgstr "Отрицательнельное значение для {} недопустимо"
-
-#: api/serializers.py:30
+#: api/serializers.py:26
 msgid "Tag with ID {} was already assigned to this recipe with ID {}"
 msgstr "Тэг с ID {} уже был приписан рецепту с ID {}"
 
-#: api/serializers.py:33
+#: api/serializers.py:29
 msgid "There is no ingredient with ID '{}' in the database"
 msgstr "В базе данных ингредиент с ID {} отсутствует"
+
+#: api/service_functions.py:9
+msgid "{} with ID '{}' duplicates provided list of IDs"
+msgstr ""
+
+#: api/service_functions.py:12
+#, fuzzy
+#| msgid "Negative value for {} is not allowed"
+msgid "Negative values are not allowed"
+msgstr "Отрицательные значения недопустимы"
 
 #: api/views.py:28
 msgid "Object not found"
@@ -82,7 +86,7 @@ msgstr "Рецепт с ID {} успешно удален из вашего из
 
 #: api/views.py:36
 msgid "Recipe with ID {} has been succefully deleted from from your cart"
-msgstr "Рецепт с ID успешно удален ищ вашей корзины"
+msgstr "Рецепт с ID {} успешно удален из вашей корзины"
 
 #: api/views.py:38
 msgid "End of list"

@@ -21,7 +21,7 @@ from rest_framework.response import Response
 from users.models import User
 
 from . import service_functions
-from .filters import IngredientNameFilter, RecipeFilter, filter_recipe_queryset
+from .filters import IngredientNameFilter, RecipeFilter
 from .paginators import CustomPageNumberPaginator
 from .permissions import IsAdminOrReadOnly, IsAuthorOrReadOnly
 
@@ -162,10 +162,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
             RecipeListSerializer if self.action in ['list', 'retrieve'] else
             CreateRecipeSerializer
         )
-
-    def get_queryset(self):
-        """modified method works with query parameters"""
-        return filter_recipe_queryset(self.request, self.queryset)
 
 
 class ManageFavoritesViewSet(views.APIView):

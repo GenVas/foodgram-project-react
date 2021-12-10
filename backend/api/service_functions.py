@@ -1,8 +1,16 @@
 from django.db.models import F
 from django.shortcuts import get_object_or_404
+from django.utils.translation import gettext_lazy as _
 from recipes.models import Ingredient, IngredientRecipe
-from rest_framework import status
+from rest_framework import serializers, status
 from rest_framework.response import Response
+
+ENTRY_DUPLICATION_MESSAGE = _(
+    "{} with ID '{}' duplicates provided list of IDs"
+)
+NEGATIVE_VALUE_NOT_ALLOWED = _(
+    'Negative values are not allowed'
+)
 
 
 def calculate_ingredients(ingredients, recipe):
@@ -87,3 +95,24 @@ def custom_delete_recipe_method(
         message.format(value),
         status.HTTP_204_NO_CONTENT
     )
+
+
+def list_contains_unique_objects(ids_list, id):
+    '''Function throughs validation error when
+    a queryset contains duplicates
+    '''
+    if id in ids_list:
+        raise serializers.ValidationError(
+                ENTRY_DUPLICATION_MESSAGE.format('Ingredient', id)
+                )
+    ids_list.append(id)
+
+
+def negative_value_constraint(value):
+    '''Function throughs validation error
+    against values <= 0
+    '''
+    if value <= 0:
+        raise serializers.ValidationError(
+                    NEGATIVE_VALUE_NOT_ALLOWED
+                )
