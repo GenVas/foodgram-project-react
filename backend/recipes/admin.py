@@ -5,7 +5,7 @@ from . import models
 
 @admin.register(models.Tag)
 class TagAdmin(admin.ModelAdmin):
-    list_display = ('name', 'color', 'slug')
+    list_display = ('id', 'name', 'color', 'slug')
 
 
 class RecipeIngredientInLine(admin.TabularInline):
@@ -16,10 +16,12 @@ class RecipeIngredientInLine(admin.TabularInline):
 @admin.register(models.Recipe)
 class RecipeAdmin(admin.ModelAdmin):
     list_display = (
+        'id',
         'name',
         'cooking_time',
         'author',
-        'pub_date')
+        'pub_date',
+        )
     inlines = (RecipeIngredientInLine,)
 
 

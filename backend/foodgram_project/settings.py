@@ -4,26 +4,17 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/3.0/howto/deployment/checklist/
-
 # SECURITY WARNING: keep the secret key used in production secret!
-# SECRET_KEY = 'rckj(on@73oaij+wkp!t-^62&)ozb9fdv90b-_+shsud*rwh8#'
 SECRET_KEY = os.environ.get("SECRET_KEY")
 
-
 # SECURITY WARNING: don't run with debug turned on in production!
-# DEBUG = True
 DEBUG = os.environ.get("DEBUG", default=False)
 
 ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", default=["*"])
 
 # Application definition
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -55,14 +46,11 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'foodgram_project.urls'
 
-
 # Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/3.0/howto/static-files/
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 # Media files
-# https://docs.djangoproject.com/en/3.2/ref/settings/#std:setting-MEDIA_ROOT
 MEDIA_URL = "/media/"
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 
@@ -102,13 +90,10 @@ DATABASES = {
     }
 }
 
-
 # Default user model configuration
 AUTH_USER_MODEL = 'users.User'
 
 # Password validation
-# https://docs.djangoproject.com/en/3.0/ref/settings/#auth-password-validators
-
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -155,8 +140,6 @@ DJOSER = {
 }
 
 # Internationalization
-# https://docs.djangoproject.com/en/3.0/topics/i18n/
-
 LOCALE_PATHS = [os.path.join(BASE_DIR, 'locale')]
 
 LANGUAGE_CODE = os.environ.get("LANGUAGE_CODE", default='en')

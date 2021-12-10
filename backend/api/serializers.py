@@ -1,4 +1,3 @@
-from django.core.exceptions import ObjectDoesNotExist
 from django.utils.translation import gettext_lazy as _
 from djoser.serializers import TokenCreateSerializer, UserCreateSerializer
 from drf_extra_fields.fields import Base64ImageField
@@ -23,15 +22,13 @@ RECIPE_IS_ALREADY_IN_THE_SHOPPING_CART = _(
 ONLY_AUTHOR_CAN_DELETE_RECIPE = _(
     'Only author can delete the recipe'
 )
-NEGATIVE_VALUE_NOT_ALLOWED = _(
-    r"Negative value for '{}' is not allowed"
-)
 TAG_ID_ALREADY_ASSIGNED = _(
     'Tag with ID {} was already assigned to this recipe with ID {}'
 )
 NO_INGREDIENT_IN_DATABASE = _(
     "There is no ingredient with ID '{}' in the database"
 )
+ENTRY_DUPLICATION_MESSAGE = "{} with ID '{}' duplicates provided list of IDs"
 
 
 class CustomTokenCreateSerializer(TokenCreateSerializer):
@@ -252,7 +249,7 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
         queryset=Tag.objects.all()
     )
     ingredients = AddIngredientToRecipeSerializer(many=True)
-    cooking_time = serializers.IntegerField(min_value=1)
+    cooking_time = serializers.IntegerField()
 
     class Meta:
         model = Recipe
@@ -281,32 +278,40 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
 
     def validate_tags(self, data):
         if self.context["request"].method in ['POST', 'PUT']:
-            tags_ids = self.initial_data['tags']
             recipe_id = self.instance.id
-            for tag in tags_ids:
+            ids_list = []
+            for tag in data:
+                id = tag.id
+                service_functions.list_contains_unique_objects(ids_list, id)
                 if Recipe.objects.filter(
                     id=self.instance.id,
-                    tags__id=tag
+                    tags__id=id
                 ).exists():
                     raise serializers.ValidationError(
-                        TAG_ID_ALREADY_ASSIGNED.format(tag, recipe_id)
+                        TAG_ID_ALREADY_ASSIGNED.format(id, recipe_id)
                     )
         return data
 
     def validate_ingredients(self, data):
         if self.context["request"].method in ['POST', 'PUT']:
-            for ingredient in self.initial_data['ingredients']:
+            ids_list = []
+            for element in data:
+                id = element['id']
+                service_functions.list_contains_unique_objects(ids_list, id)
+                service_functions.negative_value_constraint(
+                    element['amount'])
                 try:
-                    Ingredient.objects.get(id=ingredient['id'])
-                except ObjectDoesNotExist:
+                    Ingredient.objects.get(id=id)
+                except Ingredient.DoesNotExist:
                     raise serializers.ValidationError(
-                        NO_INGREDIENT_IN_DATABASE.format(ingredient['id'])
+                        NO_INGREDIENT_IN_DATABASE.format(id)
                     )
-                if ingredient['amount'] <= 0:
-                    raise serializers.ValidationError(
-                        NEGATIVE_VALUE_NOT_ALLOWED.format('ingredient')
-                    )
+        return data
 
+    def validate_cooking_time(self, data):
+        if self.context["request"].method in ['POST', 'PUT']:
+            service_functions.negative_value_constraint(
+                    data)
         return data
 
     def create(self, validated_data):
@@ -322,17 +327,14 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         '''Method allows to update recipe amount
         of ingredients in one request'''
-        if 'ingredients' in self.initial_data:
+        if 'ingredients' in self.validated_data:
             ingredients = validated_data.pop('ingredients')
             instance.ingredients.clear()
             service_functions.calculate_ingredients(ingredients, instance)
         tags = validated_data.pop('tags')
         instance.tags.set(tags)
         # updates other standard fields
-        for key, value in validated_data.items():
-            setattr(instance, key, value)
-        instance.save()
-        return instance
+        return super().update(instance, validated_data)
 
     def to_representation(self, instance):
         return RecipeListSerializer(
