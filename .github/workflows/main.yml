@@ -51,7 +51,7 @@ jobs:
           tags: ${{ secrets.DOCKER_USERNAME }}/foodgram_backend:latest
 
   build_frontend_to_docker_hub:
-    if: github.ref == 'review1' # 'refs/heads/master' #change later
+    if: github.ref == 'refs/heads/master/review1' # 'refs/heads/master' #change later
     name: Push Frontend Docker image to Docker Hub
     runs-on: ubuntu-latest
     needs: tests
