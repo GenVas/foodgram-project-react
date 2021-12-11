@@ -19,7 +19,7 @@ services:
       - db
   
   backend:
-    image: geedeega/foodgram_backend:v1.2.0
+    image: geedeega/foodgram_backend:v1.2.1
     # build:
     #   context: ../backend
     #   dockerfile: Dockerfile
