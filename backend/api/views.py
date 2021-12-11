@@ -21,7 +21,6 @@ from api.serializers import (CreateRecipeSerializer, FollowingBaseSerializer,
                              TagSerializer)
 from recipes.models import Cart, Favorite, Following, Ingredient, Recipe, Tag
 from users.models import User
-
 from . import service_functions
 from .filters import IngredientNameFilter, RecipeFilter
 from .paginators import CustomPageNumberPaginator
