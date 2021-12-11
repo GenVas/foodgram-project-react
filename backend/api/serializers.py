@@ -1,8 +1,8 @@
 from django.utils.translation import gettext_lazy as _
-from rest_framework import serializers
 
 from djoser.serializers import TokenCreateSerializer, UserCreateSerializer
 from drf_extra_fields.fields import Base64ImageField
+from rest_framework import serializers
 
 from recipes.models import (Cart, Favorite, Following, Ingredient,
                             IngredientRecipe, Recipe, Tag)
@@ -301,7 +301,6 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
             ids_list = []
             for element in data:
                 item_id = element['id']
-                print(item_id in ids_list)
                 service_functions.list_contains_unique_objects(
                     ids_list, item_id
                 )
