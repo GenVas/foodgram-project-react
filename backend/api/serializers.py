@@ -1,9 +1,11 @@
 from django.utils.translation import gettext_lazy as _
+from rest_framework import serializers
+
 from djoser.serializers import TokenCreateSerializer, UserCreateSerializer
 from drf_extra_fields.fields import Base64ImageField
+
 from recipes.models import (Cart, Favorite, Following, Ingredient,
                             IngredientRecipe, Recipe, Tag)
-from rest_framework import serializers
 from users.models import User
 
 from . import service_functions
@@ -281,14 +283,16 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
             recipe_id = self.instance.id
             ids_list = []
             for tag in data:
-                id = tag.id
-                service_functions.list_contains_unique_objects(ids_list, id)
+                item_id = tag.id
+                service_functions.list_contains_unique_objects(
+                    ids_list, item_id
+                )
                 if Recipe.objects.filter(
                     id=self.instance.id,
-                    tags__id=id
+                    tags__id=item_id
                 ).exists():
                     raise serializers.ValidationError(
-                        TAG_ID_ALREADY_ASSIGNED.format(id, recipe_id)
+                        TAG_ID_ALREADY_ASSIGNED.format(item_id, recipe_id)
                     )
         return data
 
@@ -296,15 +300,18 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
         if self.context["request"].method in ['POST', 'PUT']:
             ids_list = []
             for element in data:
-                id = element['id']
-                service_functions.list_contains_unique_objects(ids_list, id)
+                item_id = element['id']
+                print(item_id in ids_list)
+                service_functions.list_contains_unique_objects(
+                    ids_list, item_id
+                )
                 service_functions.negative_value_constraint(
                     element['amount'])
                 try:
-                    Ingredient.objects.get(id=id)
+                    Ingredient.objects.get(id=item_id)
                 except Ingredient.DoesNotExist:
                     raise serializers.ValidationError(
-                        NO_INGREDIENT_IN_DATABASE.format(id)
+                        NO_INGREDIENT_IN_DATABASE.format(item_id)
                     )
         return data
 

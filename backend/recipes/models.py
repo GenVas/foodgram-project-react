@@ -1,8 +1,9 @@
-from colorfield.fields import ColorField
 from django.contrib.auth import get_user_model
 from django.core import validators
 from django.db import models
 from django.utils.translation import ugettext_lazy as _
+
+from colorfield.fields import ColorField
 
 from .validators import SlugRegexValidator
 

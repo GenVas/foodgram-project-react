@@ -1,23 +1,25 @@
-from api.serializers import (CreateRecipeSerializer, FollowingBaseSerializer,
-                             IngredientSerializer, ManageCartSerializer,
-                             ManageFavoriteSerializer, RecipeListSerializer,
-                             SimpleFollowSerializer, SubscribersSerializer,
-                             TagSerializer)
 from django.contrib.auth import update_session_auth_hash
 from django.db.models import Sum
 from django.http import HttpResponse
 from django.utils.translation import ugettext_lazy as _
-from djoser import utils
-from djoser.compat import get_user_email
-from djoser.conf import settings
-from djoser.views import TokenCreateView, TokenDestroyView
-from djoser.views import UserViewSet as DjoserUserViewSet
-from recipes.models import Cart, Favorite, Following, Ingredient, Recipe, Tag
 from rest_framework import (filters, pagination, permissions, status, views,
                             viewsets)
 from rest_framework.decorators import action
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.response import Response
+
+from djoser import utils
+from djoser.compat import get_user_email
+from djoser.conf import settings
+from djoser.views import TokenCreateView, TokenDestroyView
+from djoser.views import UserViewSet as DjoserUserViewSet
+
+from api.serializers import (CreateRecipeSerializer, FollowingBaseSerializer,
+                             IngredientSerializer, ManageCartSerializer,
+                             ManageFavoriteSerializer, RecipeListSerializer,
+                             SimpleFollowSerializer, SubscribersSerializer,
+                             TagSerializer)
+from recipes.models import Cart, Favorite, Following, Ingredient, Recipe, Tag
 from users.models import User
 
 from . import service_functions

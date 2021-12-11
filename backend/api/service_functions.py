@@ -1,12 +1,14 @@
 from django.db.models import F
 from django.shortcuts import get_object_or_404
 from django.utils.translation import gettext_lazy as _
-from recipes.models import Ingredient, IngredientRecipe
 from rest_framework import serializers, status
 from rest_framework.response import Response
 
+from recipes.models import Ingredient, IngredientRecipe
+
+
 ENTRY_DUPLICATION_MESSAGE = _(
-    "{} with ID '{}' duplicates provided list of IDs"
+    "ID '{}' duplicates provided list of IDs"
 )
 NEGATIVE_VALUE_NOT_ALLOWED = _(
     'Negative values are not allowed'
@@ -103,8 +105,7 @@ def list_contains_unique_objects(ids_list, id):
     '''
     if id in ids_list:
         raise serializers.ValidationError(
-                ENTRY_DUPLICATION_MESSAGE.format('Ingredient', id)
-                )
+                ENTRY_DUPLICATION_MESSAGE.format(id))
     ids_list.append(id)
 
 

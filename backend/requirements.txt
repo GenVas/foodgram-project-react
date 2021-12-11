@@ -20,7 +20,6 @@ Pillow==8.4.0 # for images in the "Recipe" model
 
 flake8
 pep8-naming
-flake8-broken-line
 flake8-return
 flake8-isort # https://pypi.org/project/flake8-isort/
 gunicorn==20.1.0
