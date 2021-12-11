@@ -6,7 +6,6 @@ from rest_framework import serializers
 from recipes.models import (Cart, Favorite, Following, Ingredient,
                             IngredientRecipe, Recipe, Tag)
 from users.models import User
-
 from . import service_functions
 
 POSITIVE_VALUE_REQUIRED = _('Value of ingredient must be positive')
