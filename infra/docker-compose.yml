@@ -9,7 +9,7 @@ services:
       - ../backend/.env
 
   frontend:
-    image: geedeega/foodgram_frontend:v1.0.0
+    image: geedeega/foodgram_frontend:latest # v1.0.0
     # build:
     #   context: ../frontend
     #   dockerfile: Dockerfile
@@ -19,7 +19,7 @@ services:
       - db
   
   backend:
-    image: geedeega/foodgram_backend:v1.2.1
+    image: geedeega/foodgram_backend:latest  # v1.2.1
     # build:
     #   context: ../backend
     #   dockerfile: Dockerfile
