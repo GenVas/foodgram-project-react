@@ -2,7 +2,6 @@ from django.contrib.auth import update_session_auth_hash
 from django.db.models import Sum
 from django.http import HttpResponse
 from django.utils.translation import ugettext_lazy as _
-
 from djoser import utils
 from djoser.compat import get_user_email
 from djoser.conf import settings
@@ -21,6 +20,7 @@ from api.serializers import (CreateRecipeSerializer, FollowingBaseSerializer,
                              TagSerializer)
 from recipes.models import Cart, Favorite, Following, Ingredient, Recipe, Tag
 from users.models import User
+
 from . import service_functions
 from .filters import IngredientNameFilter, RecipeFilter
 from .paginators import CustomPageNumberPaginator
