@@ -134,7 +134,7 @@ dmypy.json
 .idea
 
 # static files
-static/
+# static/
 
 #other staff
 .archived/

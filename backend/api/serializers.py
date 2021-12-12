@@ -278,20 +278,21 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
 
     def validate_tags(self, data):
         if self.context["request"].method in ['POST', 'PUT']:
-            recipe_id = self.instance.id
             ids_list = []
             for tag in data:
                 item_id = tag.id
                 service_functions.list_contains_unique_objects(
                     ids_list, item_id
                 )
-                if Recipe.objects.filter(
-                    id=self.instance.id,
-                    tags__id=item_id
-                ).exists():
-                    raise serializers.ValidationError(
-                        TAG_ID_ALREADY_ASSIGNED.format(item_id, recipe_id)
-                    )
+        if self.context["request"].method == 'PUT':
+            recipe_id = self.instance.id
+            if Recipe.objects.filter(
+                id=recipe_id,
+                tags__id=item_id
+            ).exists():
+                raise serializers.ValidationError(
+                    TAG_ID_ALREADY_ASSIGNED.format(item_id, recipe_id)
+                )
         return data
 
     def validate_ingredients(self, data):
