@@ -10,7 +10,6 @@ from djoser.views import UserViewSet as DjoserUserViewSet
 from rest_framework import (filters, pagination, permissions, status, views,
                             viewsets)
 from rest_framework.decorators import action
-from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.response import Response
 
 from api.serializers import (CreateRecipeSerializer, FollowingBaseSerializer,
@@ -92,7 +91,6 @@ class TagViewSet(viewsets.ModelViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
     ordering_fields = ('name',)
-    pagination_class = pagination.LimitOffsetPagination
     permission_classes = [IsAdminOrReadOnly]
 
 
@@ -104,7 +102,6 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [permissions.AllowAny, ]
     filter_backends = [filters.SearchFilter]
     search_fields = ['^name', ]
-    pagination = LimitOffsetPagination
     filterset_class = IngredientNameFilter
 
 
