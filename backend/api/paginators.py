@@ -6,3 +6,4 @@ class CustomPageNumberPaginator(PageNumberPagination):
     to set to an integer to limit the maximum page size the
     client may request.'''
     page_size_query_param = 'limit'
+    page_size = 10

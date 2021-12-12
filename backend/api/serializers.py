@@ -50,7 +50,7 @@ class CustomUserCreateSerializer(UserCreateSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
-    '''Nested serializer for RecipeListSerializer'''
+    '''Nested serializer for RecipeReadSerializer'''
     is_subscribed = serializers.SerializerMethodField()
 
     class Meta:
@@ -174,7 +174,7 @@ class FollowingBaseSerializer(serializers.ModelSerializer):
 
 
 class IngredientRecipeSerializer(serializers.ModelSerializer):
-    '''Nested serializer for RecipeListSerializer that allows to configure
+    '''Nested serializer for RecipeReadSerializer that allows to configure
     ingredient fields'''
     id = serializers.ReadOnlyField(source='ingredient.id')
     name = serializers.ReadOnlyField(source='ingredient.name')
@@ -187,7 +187,7 @@ class IngredientRecipeSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'measurement_unit', 'amount']
 
 
-class RecipeListSerializer(serializers.ModelSerializer):
+class RecipeReadSerializer(serializers.ModelSerializer):
     '''Serializer serves RecipeViewSet'''
     tags = TagSerializer(many=True)
     author = UserSerializer()
@@ -231,7 +231,7 @@ class ShortRecipeSerializer(serializers.ModelSerializer):
 
 
 class AddIngredientToRecipeSerializer(serializers.ModelSerializer):
-    '''Service seriailizer for CreateRecipeSerializer field,
+    '''Service seriailizer for RecipeWriteSerializer field,
     allows to add one or more ingredients to a recipe'''
     id = serializers.IntegerField()
     amount = serializers.IntegerField()
@@ -241,12 +241,14 @@ class AddIngredientToRecipeSerializer(serializers.ModelSerializer):
         fields = ('id', 'amount')
 
 
-class CreateRecipeSerializer(serializers.ModelSerializer):
+class RecipeWriteSerializer(serializers.ModelSerializer):
     '''Serializer for creating, updating, and deleting recipes'''
     image = Base64ImageField(max_length=None, use_url=True)
-    tags = serializers.PrimaryKeyRelatedField(
-        many=True,
-        queryset=Tag.objects.all()
+    tags = serializers.ListField(
+        child=serializers.SlugRelatedField(
+            slug_field='id',
+            queryset=Tag.objects.all(),
+        ),
     )
     ingredients = AddIngredientToRecipeSerializer(many=True)
     cooking_time = serializers.IntegerField()
@@ -338,11 +340,10 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
             service_functions.calculate_ingredients(ingredients, instance)
         tags = validated_data.pop('tags')
         instance.tags.set(tags)
-        # updates other standard fields
         return super().update(instance, validated_data)
 
     def to_representation(self, instance):
-        return RecipeListSerializer(
+        return RecipeReadSerializer(
             instance,
             context={'request': self.context.get('request')}
         ).data

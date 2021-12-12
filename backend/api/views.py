@@ -1,5 +1,6 @@
 from django.contrib.auth import update_session_auth_hash
 from django.db.models import Sum
+from django_filters.rest_framework.backends import DjangoFilterBackend
 from django.http import HttpResponse
 from django.utils.translation import ugettext_lazy as _
 from djoser import utils
@@ -10,11 +11,12 @@ from djoser.views import UserViewSet as DjoserUserViewSet
 from rest_framework import (filters, pagination, permissions, status, views,
                             viewsets)
 from rest_framework.decorators import action
+from rest_framework.mixins import ListModelMixin, RetrieveModelMixin
 from rest_framework.response import Response
-
-from api.serializers import (CreateRecipeSerializer, FollowingBaseSerializer,
+from rest_framework.viewsets import GenericViewSet
+from api.serializers import (RecipeWriteSerializer, FollowingBaseSerializer,
                              IngredientSerializer, ManageCartSerializer,
-                             ManageFavoriteSerializer, RecipeListSerializer,
+                             ManageFavoriteSerializer, RecipeReadSerializer,
                              SimpleFollowSerializer, SubscribersSerializer,
                              TagSerializer)
 from recipes.models import Cart, Favorite, Following, Ingredient, Recipe, Tag
@@ -22,7 +24,7 @@ from users.models import User
 from . import service_functions
 from .filters import IngredientNameFilter, RecipeFilter
 from .paginators import CustomPageNumberPaginator
-from .permissions import IsAdminOrReadOnly, IsAuthorOrReadOnly
+from .permissions import IsAdminOrReadOnly, IsAuthorOrAdminOrReadOnly
 
 OBJECT_NOT_FOUND = _('Object not found')
 SUCCESSFULLY_UNFOLLOWED = _(
@@ -37,6 +39,10 @@ RECIPE_REMOVED_FROM_CART = _(
 END_OF_LIST = _('End of list')
 DOWNLOAD_CART_PRINT_LINE = '{} ({}) - {} \n'
 EMPTY_CART_LIST = _('Cart list is empty')
+
+
+class ListRetriveViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
+    pass
 
 
 class UserViewSet(DjoserUserViewSet):
@@ -85,17 +91,17 @@ class CustomTokenDestroyView(TokenDestroyView):
         return Response(status=status.HTTP_201_CREATED)
 
 
-class TagViewSet(viewsets.ModelViewSet):
+class TagViewSet(ListRetriveViewSet):
     '''Viewset for Tags'''
 
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
     ordering_fields = ('name',)
-    permission_classes = [IsAdminOrReadOnly]
-
+    # permission_classes = [IsAdminOrReadOnly]
+    allowed_methods = ('get',)
 
 # example: http://127.0.0.1:8000/api/ingredients?search=бур
-class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
+class IngredientViewSet(ListRetriveViewSet):
     '''Viewset for ingredirents'''
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
@@ -103,7 +109,27 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     filter_backends = [filters.SearchFilter]
     search_fields = ['^name', ]
     filterset_class = IngredientNameFilter
+    allowed_methods = ('get',)
 
+
+class RecipeViewSet(viewsets.ModelViewSet):
+    '''Viewset for viewing and managing Recipes'''
+    filterset_class = RecipeFilter
+    filter_backends = (DjangoFilterBackend,)
+    ordering_fields = ('name',)
+    permission_classes = [IsAuthorOrAdminOrReadOnly]
+    pagination_class = CustomPageNumberPaginator
+    queryset = Recipe.objects.all()
+    http_method_names = ('get', 'post', 'put', 'delete',)
+
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user)
+
+    def get_serializer_class(self):
+        return (
+            RecipeReadSerializer if self.action in ['get', 'list', 'retrieve'] else
+            RecipeWriteSerializer
+        )
 
 class ListMyFollowingsViewSet(viewsets.ModelViewSet):
     '''Viewset for list of followings (subscriptions)'''
@@ -141,24 +167,6 @@ class ManageFollowingsViewSet(views.APIView):
             self.get_serializer_class,
             key, value, SUCCESSFULLY_UNFOLLOWED
             )
-
-
-class RecipeViewSet(viewsets.ModelViewSet):
-    '''Viewset for viewing and managing Recipes'''
-    filterset_class = RecipeFilter
-    ordering_fields = ('name',)
-    permission_classes = [IsAuthorOrReadOnly]
-    pagination_class = CustomPageNumberPaginator
-    queryset = Recipe.objects.all()
-
-    def perform_create(self, serializer):
-        serializer.save(author=self.request.user)
-
-    def get_serializer_class(self):
-        return (
-            RecipeListSerializer if self.action in ['list', 'retrieve'] else
-            CreateRecipeSerializer
-        )
 
 
 class ManageFavoritesViewSet(views.APIView):
