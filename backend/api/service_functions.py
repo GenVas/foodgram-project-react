@@ -66,8 +66,8 @@ def custom_delete_author_method(
     serializer.is_valid(raise_exception=True)
     follower.delete()
     return Response(
-        message.format(value),
-        status.HTTP_204_NO_CONTENT
+        # message.format(value),
+        status=status.HTTP_204_NO_CONTENT
     )
 
 
@@ -93,8 +93,8 @@ def custom_delete_recipe_method(
     serializer.is_valid(raise_exception=True)
     follower.delete()
     return Response(
-        message.format(value),
-        status.HTTP_204_NO_CONTENT
+        # message.format(value),
+        status=status.HTTP_204_NO_CONTENT
     )
 
 

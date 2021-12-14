@@ -8,12 +8,13 @@ from djoser.compat import get_user_email
 from djoser.conf import settings
 from djoser.views import TokenCreateView, TokenDestroyView
 from djoser.views import UserViewSet as DjoserUserViewSet
-from rest_framework import (filters, pagination, permissions, status, views,
-                            viewsets)
+from rest_framework import (permissions, status, views, viewsets)
 from rest_framework.decorators import action
 from rest_framework.mixins import ListModelMixin, RetrieveModelMixin
+# from rest_framework.permissions import SAFE_METHODS
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
+
 from api.serializers import (RecipeWriteSerializer, FollowingBaseSerializer,
                              IngredientSerializer, ManageCartSerializer,
                              ManageFavoriteSerializer, RecipeReadSerializer,
@@ -24,7 +25,7 @@ from users.models import User
 from . import service_functions
 from .filters import IngredientNameFilter, RecipeFilter
 from .paginators import CustomPageNumberPaginator
-from .permissions import IsAdminOrReadOnly, IsAuthorOrAdminOrReadOnly
+from .permissions import IsAuthorOrAdminOrReadOnly
 
 OBJECT_NOT_FOUND = _('Object not found')
 SUCCESSFULLY_UNFOLLOWED = _(
@@ -47,8 +48,9 @@ class ListRetriveViewSet(ListModelMixin, RetrieveModelMixin, GenericViewSet):
 
 class UserViewSet(DjoserUserViewSet):
     '''Viewset amends standard djoser viewset in
-    order to receive targeted response code 200'''
-    @action(["post"], detail=False)
+    order to receive targeted response code 204'''
+    http_method_names = ['get', 'post']
+    @action(['post'], detail=False)
     def set_password(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -66,7 +68,7 @@ class UserViewSet(DjoserUserViewSet):
             utils.logout_user(self.request)
         elif settings.CREATE_SESSION_ON_LOGIN:
             update_session_auth_hash(self.request, self.request.user)
-        return Response(status=status.HTTP_200_OK)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class CustomTokenCreateView(TokenCreateView):
@@ -93,34 +95,29 @@ class CustomTokenDestroyView(TokenDestroyView):
 
 class TagViewSet(ListRetriveViewSet):
     '''Viewset for Tags'''
-
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
-    ordering_fields = ('name',)
-    # permission_classes = [IsAdminOrReadOnly]
-    allowed_methods = ('get',)
+    permission_classes = [permissions.AllowAny, ]
+    http_method_names = ['get']
 
-# example: http://127.0.0.1:8000/api/ingredients?search=бур
+
 class IngredientViewSet(ListRetriveViewSet):
     '''Viewset for ingredirents'''
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
     permission_classes = [permissions.AllowAny, ]
-    filter_backends = [filters.SearchFilter]
-    search_fields = ['^name', ]
+    filter_backends = (DjangoFilterBackend,)
     filterset_class = IngredientNameFilter
-    allowed_methods = ('get',)
-
+    http_method_names = ['get']
 
 class RecipeViewSet(viewsets.ModelViewSet):
     '''Viewset for viewing and managing Recipes'''
     filterset_class = RecipeFilter
     filter_backends = (DjangoFilterBackend,)
-    ordering_fields = ('name',)
     permission_classes = [IsAuthorOrAdminOrReadOnly]
     pagination_class = CustomPageNumberPaginator
     queryset = Recipe.objects.all()
-    http_method_names = ('get', 'post', 'put', 'delete',)
+    http_method_names = ['get', 'post', 'put', 'patch', 'delete']
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
@@ -135,12 +132,12 @@ class ListMyFollowingsViewSet(viewsets.ModelViewSet):
     '''Viewset for list of followings (subscriptions)'''
     serializer_class = SubscribersSerializer
     pagination_class = CustomPageNumberPaginator
+    http_method_names = ['get']
 
     def get_queryset(self):
         return User.objects.filter(following__user=self.request.user)
 
 
-# https://www.django-rest-framework.org/api-guide/views/
 class ManageFollowingsViewSet(views.APIView):
     ''' Viewset for adding or removing following (subscriptions) for a user'''
     def get_queryset(self):
@@ -172,7 +169,6 @@ class ManageFollowingsViewSet(views.APIView):
 class ManageFavoritesViewSet(views.APIView):
     ''' Viewset for adding or removing recipes
     to/from Favorites for a user'''
-
     def get(self, request, recipe_id):
         key, value = 'recipe', recipe_id
         return service_functions.custom_get_method(
@@ -193,7 +189,6 @@ class ManageFavoritesViewSet(views.APIView):
 class ManageCartView(views.APIView):
     ''' Viewset for adding or removing recipes
     to/from Cart (purchase list) of a user'''
-
     def get(self, request, recipe_id):
         key, value = 'recipe', recipe_id
         return service_functions.custom_get_method(

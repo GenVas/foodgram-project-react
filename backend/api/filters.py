@@ -1,7 +1,6 @@
 import django_filters as filters
 
 from recipes.models import Ingredient, Recipe
-from users.models import User
 
 
 class RecipeFilter(filters.FilterSet):
@@ -9,13 +8,12 @@ class RecipeFilter(filters.FilterSet):
     tags = filters.AllValuesMultipleFilter(
         field_name='tags__slug'
     )
-    author = filters.ModelChoiceFilter(
-        queryset=User.objects.all()
-    )
 
     class Meta:
         model = Recipe
-        fields = ['tags', 'author']
+        fields = (
+            'author',
+        )
 
     def filter_queryset(self, queryset):
         queryset = super().filter_queryset(queryset)
@@ -36,4 +34,7 @@ class IngredientNameFilter(filters.FilterSet):
 
     class Meta:
         model = Ingredient
-        fields = ('name', 'measurement_unit')
+        fields = (
+            'name',
+            # 'measurement_unit'
+            )

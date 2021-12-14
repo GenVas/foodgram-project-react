@@ -105,16 +105,16 @@ AUTH_PASSWORD_VALIDATORS = [
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
+        'rest_framework.permissions.AllowAny',
     ],
 
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
     ],
 
-    'DEFAULT_FILTER_BACKENDS': [
-        'django_filters.rest_framework.DjangoFilterBackend',
-    ],
+    # 'DEFAULT_FILTER_BACKENDS': [
+    #     'django_filters.rest_framework.DjangoFilterBackend',
+    # ],
 
     # 'DEFAULT_PAGINATION_CLASS':
     #     'api.paginators.CustomPageNumberPaginator',
@@ -127,7 +127,13 @@ DJOSER = {
         'current_user': 'api.serializers.UserSerializer',
         'user_create': 'api.serializers.CustomUserCreateSerializer',
         'token_create': 'api.serializers.CustomTokenCreateSerializer',
+        # 'token_destroy': 'api.serializers.CustomTokenCreateSerializer',
     },
+    'PERMISSIONS': {
+        'user_list': ('rest_framework.permissions.AllowAny',),
+        'user': ('rest_framework.permissions.AllowAny',)
+    },
+    'HIDE_USERS': False,
     'LOGIN_FIELD': 'email',
 }
 
