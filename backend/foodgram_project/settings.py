@@ -21,13 +21,14 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'rest_framework.authtoken',
+    'django_filters',
     'drf_yasg',
     'djoser',
     'users',
     'recipes',
     'api',
     'colorfield',
-    'rest_framework.authtoken',
 ]
 
 MIDDLEWARE = [
@@ -111,14 +112,6 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
     ],
-
-    # 'DEFAULT_FILTER_BACKENDS': [
-    #     'django_filters.rest_framework.DjangoFilterBackend',
-    # ],
-
-    # 'DEFAULT_PAGINATION_CLASS':
-    #     'api.paginators.CustomPageNumberPaginator',
-    # 'PAGE_SIZE': 6,
 }
 
 DJOSER = {
@@ -127,7 +120,6 @@ DJOSER = {
         'current_user': 'api.serializers.UserSerializer',
         'user_create': 'api.serializers.CustomUserCreateSerializer',
         'token_create': 'api.serializers.CustomTokenCreateSerializer',
-        # 'token_destroy': 'api.serializers.CustomTokenCreateSerializer',
     },
     'PERMISSIONS': {
         'user_list': ('rest_framework.permissions.AllowAny',),

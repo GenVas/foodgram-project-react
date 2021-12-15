@@ -9,20 +9,20 @@ services:
       - ../backend/.env
 
   frontend:
-    # image: geedeega/foodgram_frontend:latest # v1.0.0
-    build:
-      context: ../frontend
-      dockerfile: Dockerfile
+    image: geedeega/foodgram_frontend:latest # v1.0.0
+    # build:
+    #   context: ../frontend
+    #   dockerfile: Dockerfile
     volumes:
       - ../frontend/:/app/result_build
     depends_on:
       - db
   
   backend:
-    # image: geedeega/foodgram_backend:latest  # v1.2.1
-    build:
-      context: ../backend
-      dockerfile: Dockerfile
+    image: geedeega/foodgram_backend:latest  # v1.2.1
+    # build:
+    #   context: ../backend
+    #   dockerfile: Dockerfile
     restart: always
     volumes:
       - static_value:/code/static/

@@ -1,5 +1,5 @@
 import django_filters as filters
-
+from django_filters.rest_framework import FilterSet
 from recipes.models import Ingredient, Recipe
 
 
@@ -34,7 +34,4 @@ class IngredientNameFilter(filters.FilterSet):
 
     class Meta:
         model = Ingredient
-        fields = (
-            'name',
-            # 'measurement_unit'
-            )
+        fields = ('name',)

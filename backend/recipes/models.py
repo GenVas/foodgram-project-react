@@ -43,8 +43,6 @@ class Tag(models.Model):
     def __str__(self):
         return self.name
 
-    # def get_absolute_url(self):
-    #     return reverse('tag', args=[self.slug])
 
 class Ingredient(models.Model):
     '''Model for Ingredients'''
